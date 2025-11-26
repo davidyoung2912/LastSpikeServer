@@ -36,6 +36,13 @@ builder.Services.AddSingleton<GameplaySessionTracker.Repositories.IGameBoardRepo
 builder.Services.AddSingleton<ISessionService, SessionService>();
 builder.Services.AddSingleton<IPlayerService, PlayerService>();
 builder.Services.AddSingleton<IGameBoardService, GameBoardService>();
+builder.Services.AddSingleton<GameplaySessionTracker.Repositories.ISessionGameBoardRepository, GameplaySessionTracker.Repositories.SessionGameBoardRepository>();
+builder.Services.AddSingleton<ISessionGameBoardService, SessionGameBoardService>();
+builder.Services.AddSingleton<GameplaySessionTracker.Repositories.ISessionPlayerRepository, GameplaySessionTracker.Repositories.SessionPlayerRepository>();
+builder.Services.AddSingleton<ISessionPlayerService, SessionPlayerService>();
+builder.Services.AddSingleton<IMetricsService, MetricsService>();
+
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 

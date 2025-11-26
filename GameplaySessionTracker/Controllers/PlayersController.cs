@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using GameplaySessionTracker.Models;
 using GameplaySessionTracker.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -36,6 +39,20 @@ namespace GameplaySessionTracker.Controllers
         public ActionResult<Player> Create(Player player)
         {
             player.Id = Guid.NewGuid();
+
+            // Check for duplicate Name
+            var existingPlayers = _playerService.GetAll();
+            if (existingPlayers.Any(p => p.Name.Equals(player.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                return BadRequest($"A player with the name '{player.Name}' already exists");
+            }
+
+            // Check for duplicate Alias
+            if (existingPlayers.Any(p => p.Alias.Equals(player.Alias, StringComparison.OrdinalIgnoreCase)))
+            {
+                return BadRequest($"A player with the alias '{player.Alias}' already exists");
+            }
+
             var createdPlayer = _playerService.Create(player);
             return CreatedAtAction(nameof(GetById), new { id = createdPlayer.Id }, createdPlayer);
         }
@@ -52,6 +69,19 @@ namespace GameplaySessionTracker.Controllers
             if (existing == null)
             {
                 return NotFound();
+            }
+
+            // Check for duplicate Name (excluding current player)
+            var existingPlayers = _playerService.GetAll();
+            if (existingPlayers.Any(p => p.Id != id && p.Name.Equals(player.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                return BadRequest($"A player with the name '{player.Name}' already exists");
+            }
+
+            // Check for duplicate Alias (excluding current player)
+            if (existingPlayers.Any(p => p.Id != id && p.Alias.Equals(player.Alias, StringComparison.OrdinalIgnoreCase)))
+            {
+                return BadRequest($"A player with the alias '{player.Alias}' already exists");
             }
 
             _playerService.Update(id, player);

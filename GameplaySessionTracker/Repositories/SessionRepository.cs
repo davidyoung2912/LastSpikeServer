@@ -56,7 +56,7 @@ namespace GameplaySessionTracker.Repositories
         {
             using var connection = CreateConnection();
             connection.Execute(
-                "INSERT INTO Sessions (Id, Description, BoardId) VALUES (@Id, @Description, @BoardId)",
+                "INSERT INTO Sessions (Id, Description, BoardId, StartTime, EndTime) VALUES (@Id, @Description, @BoardId, @StartTime, @EndTime)",
                 session);
 
             // Add player associations
@@ -72,7 +72,7 @@ namespace GameplaySessionTracker.Repositories
         {
             using var connection = CreateConnection();
             connection.Execute(
-                "UPDATE Sessions SET Description = @Description, BoardId = @BoardId WHERE Id = @Id",
+                "UPDATE Sessions SET Description = @Description, BoardId = @BoardId, StartTime = @StartTime, EndTime = @EndTime WHERE Id = @Id",
                 session);
 
             // Remove existing player associations
