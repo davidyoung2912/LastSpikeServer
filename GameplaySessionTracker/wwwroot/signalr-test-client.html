@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,24 +14,28 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
+
         .container {
             background: white;
             border-radius: 12px;
             padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
         }
+
         h1 {
             color: #333;
             margin-top: 0;
             border-bottom: 3px solid #667eea;
             padding-bottom: 10px;
         }
+
         h2 {
             color: #555;
             margin-top: 30px;
             border-bottom: 2px solid #ddd;
             padding-bottom: 8px;
         }
+
         .status {
             padding: 15px;
             border-radius: 8px;
@@ -40,32 +45,46 @@
             align-items: center;
             gap: 10px;
         }
+
         .status.connected {
             background: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
+
         .status.disconnected {
             background: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
         .status-indicator {
             width: 12px;
             height: 12px;
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
+
         .status.connected .status-indicator {
             background: #28a745;
         }
+
         .status.disconnected .status-indicator {
             background: #dc3545;
         }
+
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
+
         button {
             background: #667eea;
             color: white;
@@ -78,19 +97,23 @@
             transition: all 0.3s;
             margin-right: 10px;
         }
+
         button:hover {
             background: #5568d3;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
+
         button:active {
             transform: translateY(0);
         }
+
         button:disabled {
             background: #ccc;
             cursor: not-allowed;
             transform: none;
         }
+
         #events {
             background: #f8f9fa;
             border: 1px solid #dee2e6;
@@ -101,6 +124,7 @@
             font-family: 'Courier New', monospace;
             font-size: 14px;
         }
+
         .event {
             padding: 10px;
             margin: 8px 0;
@@ -109,30 +133,36 @@
             background: white;
             animation: slideIn 0.3s ease-out;
         }
+
         @keyframes slideIn {
             from {
                 opacity: 0;
                 transform: translateX(-20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateX(0);
             }
         }
+
         .event-type {
             font-weight: bold;
             color: #667eea;
             margin-right: 10px;
         }
+
         .event-time {
             color: #6c757d;
             font-size: 12px;
             float: right;
         }
+
         .event-data {
             margin-top: 5px;
             color: #495057;
         }
+
         .controls {
             margin: 20px 0;
             display: flex;
@@ -141,10 +171,11 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>🎮 Last Spike Game Tracker - SignalR Test Client</h1>
-        
+
         <div id="status" class="status disconnected">
             <span class="status-indicator"></span>
             <span id="statusText">Disconnected</span>
@@ -158,7 +189,8 @@
 
         <h2>📡 Real-Time Events</h2>
         <div id="events">
-            <p style="color: #6c757d; text-align: center; margin: 20px;">No events yet. Connect and perform API operations to see real-time updates.</p>
+            <p style="color: #6c757d; text-align: center; margin: 20px;">No events yet. Connect and perform API
+                operations to see real-time updates.</p>
         </div>
     </div>
 
@@ -167,8 +199,8 @@
         let connection = null;
 
         async function connect() {
-            const hubUrl = "http://localhost:5098/gameHub";
-            
+            const hubUrl = "http://localhost:5098/gamehub";
+
             connection = new signalR.HubConnectionBuilder()
                 .withUrl(hubUrl)
                 .withAutomaticReconnect()
@@ -251,7 +283,7 @@
 
         function addEvent(eventType, data) {
             const eventsDiv = document.getElementById("events");
-            
+
             // Remove placeholder text if present
             if (eventsDiv.children.length === 1 && eventsDiv.children[0].tagName === 'P') {
                 eventsDiv.innerHTML = '';
@@ -259,17 +291,17 @@
 
             const eventDiv = document.createElement("div");
             eventDiv.className = "event";
-            
+
             const now = new Date().toLocaleTimeString();
-            
+
             eventDiv.innerHTML = `
                 <span class="event-type">${eventType}</span>
                 <span class="event-time">${now}</span>
                 <div class="event-data">${JSON.stringify(data, null, 2)}</div>
             `;
-            
+
             eventsDiv.insertBefore(eventDiv, eventsDiv.firstChild);
-            
+
             // Keep only last 50 events
             while (eventsDiv.children.length > 50) {
                 eventsDiv.removeChild(eventsDiv.lastChild);
@@ -287,4 +319,5 @@
         });
     </script>
 </body>
+
 </html>

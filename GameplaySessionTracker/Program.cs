@@ -1,4 +1,5 @@
 using GameplaySessionTracker.Services;
+using GameplaySessionTracker.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,6 +7,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
+
+// Add CORS for SignalR
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.SetIsOriginAllowed(_ => true)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Server=localhost;Database=LastSpike;Integrated Security=true;TrustServerCertificate=true;";
@@ -34,8 +48,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseStaticFiles();
+
+app.UseCors("AllowAll");
+
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<GameHub>("/gamehub");
 
 app.Run();
