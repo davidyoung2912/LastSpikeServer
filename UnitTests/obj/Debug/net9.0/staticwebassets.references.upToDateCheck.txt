@@ -1,0 +1,1 @@
+C:\AI_Games\LastSpikeServer\GameplaySessionTracker\obj\Debug\net9.0\staticwebassets.build.json

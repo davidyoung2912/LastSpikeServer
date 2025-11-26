@@ -8,6 +8,8 @@ namespace GameplaySessionTracker.Models
         public Guid Id { get; set; }
         public string Description { get; set; } = string.Empty;
         public Guid BoardId { get; set; }
+        public DateTime? StartTime { get; set; }
+        public DateTime? EndTime { get; set; }
         public List<Guid> PlayerIds { get; set; } = new List<Guid>();
     }
 }

@@ -142,6 +142,10 @@ namespace GameplaySessionTracker.Controllers
             }
 
             // Add player to session
+            if (session.PlayerIds.Count == 0)
+            {
+                session.StartTime = DateTime.UtcNow;
+            }
             session.PlayerIds.Add(playerId);
             _sessionService.Update(sessionId, session);
 
@@ -166,6 +170,10 @@ namespace GameplaySessionTracker.Controllers
 
             // Remove player from session
             session.PlayerIds.Remove(playerId);
+            if (session.PlayerIds.Count == 0)
+            {
+                session.EndTime = DateTime.UtcNow;
+            }
             _sessionService.Update(sessionId, session);
 
             return Ok(new { message = $"Player {playerId} removed from session {sessionId}" });
