@@ -208,41 +208,41 @@
                 .build();
 
             // Register event handlers
-            connection.on("SessionCreated", (session) => {
-                addEvent("SessionCreated", session);
+            connection.on("SessionGameBoardUpdated", (session) => {
+                addEvent("SessionGameBoardUpdated", session);
             });
 
-            connection.on("SessionUpdated", (session) => {
-                addEvent("SessionUpdated", session);
-            });
+            // connection.on("SessionUpdated", (session) => {
+            //     addEvent("SessionUpdated", session);
+            // });
 
-            connection.on("SessionDeleted", (id) => {
-                addEvent("SessionDeleted", { id });
-            });
+            // connection.on("SessionDeleted", (id) => {
+            //     addEvent("SessionDeleted", { id });
+            // });
 
-            connection.on("PlayerCreated", (player) => {
-                addEvent("PlayerCreated", player);
-            });
+            // connection.on("PlayerCreated", (player) => {
+            //     addEvent("PlayerCreated", player);
+            // });
 
-            connection.on("PlayerUpdated", (player) => {
-                addEvent("PlayerUpdated", player);
-            });
+            // connection.on("PlayerUpdated", (player) => {
+            //     addEvent("PlayerUpdated", player);
+            // });
 
-            connection.on("PlayerDeleted", (id) => {
-                addEvent("PlayerDeleted", { id });
-            });
+            // connection.on("PlayerDeleted", (id) => {
+            //     addEvent("PlayerDeleted", { id });
+            // });
 
-            connection.on("BoardCreated", (board) => {
-                addEvent("BoardCreated", board);
-            });
+            // connection.on("BoardCreated", (board) => {
+            //     addEvent("BoardCreated", board);
+            // });
 
-            connection.on("BoardUpdated", (board) => {
-                addEvent("BoardUpdated", board);
-            });
+            // connection.on("BoardUpdated", (board) => {
+            //     addEvent("BoardUpdated", board);
+            // });
 
-            connection.on("BoardDeleted", (id) => {
-                addEvent("BoardDeleted", { id });
-            });
+            // connection.on("BoardDeleted", (id) => {
+            //     addEvent("BoardDeleted", { id });
+            // });
 
             try {
                 await connection.start();

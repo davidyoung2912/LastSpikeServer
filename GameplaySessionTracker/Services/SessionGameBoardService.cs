@@ -2,42 +2,41 @@ using System;
 using System.Collections.Generic;
 using GameplaySessionTracker.Models;
 using GameplaySessionTracker.Repositories;
+using Microsoft.AspNetCore.SignalR;
+using GameplaySessionTracker.Hubs;
 
 namespace GameplaySessionTracker.Services
 {
-    public class SessionGameBoardService : ISessionGameBoardService
+    public class SessionGameBoardService(
+        ISessionGameBoardRepository repository,
+        IHubContext<GameHub> hubContext) : ISessionGameBoardService
     {
-        private readonly ISessionGameBoardRepository _repository;
 
-        public SessionGameBoardService(ISessionGameBoardRepository repository)
+        public async Task<IEnumerable<SessionGameBoard>> GetAll()
         {
-            _repository = repository;
+            return repository.GetAll();
         }
 
-        public IEnumerable<SessionGameBoard> GetAll()
+        public async Task<SessionGameBoard?> GetById(Guid id)
         {
-            return _repository.GetAll();
+            return repository.GetById(id);
         }
 
-        public SessionGameBoard? GetById(Guid id)
+        public async Task<SessionGameBoard> Create(SessionGameBoard sessionGameBoard)
         {
-            return _repository.GetById(id);
-        }
-
-        public SessionGameBoard Create(SessionGameBoard sessionGameBoard)
-        {
-            _repository.Add(sessionGameBoard);
+            repository.Add(sessionGameBoard);
             return sessionGameBoard;
         }
 
-        public void Update(Guid id, SessionGameBoard sessionGameBoard)
+        public async Task Update(Guid id, SessionGameBoard sessionGameBoard)
         {
-            _repository.Update(sessionGameBoard);
+            repository.Update(sessionGameBoard);
+            await hubContext.Clients.Group(sessionGameBoard.SessionId.ToString()).SendAsync("SessionGameBoardUpdated", sessionGameBoard.Data);
         }
 
-        public void Delete(Guid id)
+        public async Task Delete(Guid id)
         {
-            _repository.Delete(id);
+            repository.Delete(id);
         }
     }
 }

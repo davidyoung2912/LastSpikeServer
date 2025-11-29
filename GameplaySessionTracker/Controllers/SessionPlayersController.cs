@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using GameplaySessionTracker.Models;
 using GameplaySessionTracker.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -11,35 +8,23 @@ namespace GameplaySessionTracker.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class SessionPlayersController : ControllerBase
+    public class SessionPlayersController(
+        ISessionPlayerService sessionPlayerService,
+        ISessionService sessionService,
+        IPlayerService playerService)
+        : ControllerBase
     {
-        private readonly ISessionPlayerService _sessionPlayerService;
-        private readonly ISessionService _sessionService;
-        private readonly IPlayerService _playerService;
-        private readonly IHubContext<GameHub> _hubContext;
-
-        public SessionPlayersController(
-            ISessionPlayerService sessionPlayerService,
-            ISessionService sessionService,
-            IPlayerService playerService,
-            IHubContext<GameHub> hubContext)
-        {
-            _sessionPlayerService = sessionPlayerService;
-            _sessionService = sessionService;
-            _playerService = playerService;
-            _hubContext = hubContext;
-        }
 
         [HttpGet]
         public ActionResult<IEnumerable<SessionPlayer>> GetAll()
         {
-            return Ok(_sessionPlayerService.GetAll());
+            return Ok(sessionPlayerService.GetAll());
         }
 
         [HttpGet("{id}")]
         public ActionResult<SessionPlayer> GetById(Guid id)
         {
-            var sessionPlayer = _sessionPlayerService.GetById(id);
+            var sessionPlayer = sessionPlayerService.GetById(id);
             if (sessionPlayer == null)
             {
                 return NotFound();
@@ -51,14 +36,14 @@ namespace GameplaySessionTracker.Controllers
         public ActionResult<IEnumerable<SessionPlayer>> GetBySessionId(Guid sessionId)
         {
             // Validate session exists
-            var session = _sessionService.GetById(sessionId);
+            var session = sessionService.GetById(sessionId);
             if (session == null)
             {
                 return NotFound($"Session with ID {sessionId} not found");
             }
 
             // Get all SessionPlayers for this session
-            var sessionPlayers = _sessionPlayerService.GetAll()
+            var sessionPlayers = sessionPlayerService.GetAll()
                 .Where(sp => sp.SessionId == sessionId);
 
             return Ok(sessionPlayers);
@@ -70,21 +55,20 @@ namespace GameplaySessionTracker.Controllers
             sessionPlayer.Id = Guid.NewGuid();
 
             // Validate SessionId
-            var session = _sessionService.GetById(sessionPlayer.SessionId);
+            var session = sessionService.GetById(sessionPlayer.SessionId);
             if (session == null)
             {
                 return BadRequest($"SessionId {sessionPlayer.SessionId} does not exist");
             }
 
             // Validate PlayerId
-            var player = _playerService.GetById(sessionPlayer.PlayerId);
+            var player = playerService.GetById(sessionPlayer.PlayerId);
             if (player == null)
             {
                 return BadRequest($"PlayerId {sessionPlayer.PlayerId} does not exist");
             }
 
-            var created = _sessionPlayerService.Create(sessionPlayer);
-            await _hubContext.Clients.All.SendAsync("SessionPlayerUpdated", created);
+            var created = sessionPlayerService.Create(sessionPlayer);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
@@ -96,42 +80,40 @@ namespace GameplaySessionTracker.Controllers
                 return BadRequest("ID mismatch");
             }
 
-            var existing = _sessionPlayerService.GetById(id);
+            var existing = sessionPlayerService.GetById(id);
             if (existing == null)
             {
                 return NotFound();
             }
 
             // Validate SessionId
-            var session = _sessionService.GetById(sessionPlayer.SessionId);
+            var session = sessionService.GetById(sessionPlayer.SessionId);
             if (session == null)
             {
                 return BadRequest($"SessionId {sessionPlayer.SessionId} does not exist");
             }
 
             // Validate PlayerId
-            var player = _playerService.GetById(sessionPlayer.PlayerId);
+            var player = playerService.GetById(sessionPlayer.PlayerId);
             if (player == null)
             {
                 return BadRequest($"PlayerId {sessionPlayer.PlayerId} does not exist");
             }
 
-            _sessionPlayerService.Update(id, sessionPlayer);
-            await _hubContext.Clients.All.SendAsync("SessionPlayerUpdated", sessionPlayer);
+            sessionPlayerService.Update(id, sessionPlayer);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var existing = _sessionPlayerService.GetById(id);
+            var existing = sessionPlayerService.GetById(id);
             if (existing == null)
             {
                 return NotFound();
             }
 
-            _sessionPlayerService.Delete(id);
-            await _hubContext.Clients.All.SendAsync("SessionPlayerUpdated", id);
+            sessionPlayerService.Delete(id);
             return NoContent();
         }
     }

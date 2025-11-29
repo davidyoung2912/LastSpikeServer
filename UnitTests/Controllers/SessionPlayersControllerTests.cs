@@ -16,29 +16,15 @@ public class SessionPlayersControllerTests
     private readonly Mock<ISessionPlayerService> _mockService;
     private readonly Mock<ISessionService> _mockSessionService;
     private readonly Mock<IPlayerService> _mockPlayerService;
-    private readonly Mock<IHubContext<GameHub>> _mockHubContext;
-    private readonly SessionPlayersController _controller;
 
+    private readonly SessionPlayersController _controller;
     public SessionPlayersControllerTests()
     {
         _mockService = new Mock<ISessionPlayerService>();
         _mockSessionService = new Mock<ISessionService>();
         _mockPlayerService = new Mock<IPlayerService>();
-        _mockHubContext = new Mock<IHubContext<GameHub>>();
 
-        var mockClients = new Mock<IHubClients>();
-        var mockClientProxy = new Mock<IClientProxy>();
-
-        mockClientProxy.Setup(p => p.SendCoreAsync(
-            It.IsAny<string>(),
-            It.IsAny<object[]>(),
-            It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        mockClients.Setup(c => c.All).Returns(mockClientProxy.Object);
-        _mockHubContext.Setup(c => c.Clients).Returns(mockClients.Object);
-
-        _controller = new SessionPlayersController(_mockService.Object, _mockSessionService.Object, _mockPlayerService.Object, _mockHubContext.Object);
+        _controller = new SessionPlayersController(_mockService.Object, _mockSessionService.Object, _mockPlayerService.Object);
     }
 
     [Fact]

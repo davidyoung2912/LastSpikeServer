@@ -23,8 +23,8 @@ public class SessionGameBoardServiceTests
         // Arrange
         var sessionGameBoards = new List<SessionGameBoard>
         {
-            new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid(), Data = "Data1" },
-            new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid(), Data = "Data2" }
+            new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Data = "Data1" },
+            new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Data = "Data2" }
         };
         _mockRepository.Setup(r => r.GetAll()).Returns(sessionGameBoards);
 
@@ -41,7 +41,7 @@ public class SessionGameBoardServiceTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid(), Data = "Test" };
+        var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid(), Data = "Test" };
         _mockRepository.Setup(r => r.GetById(id)).Returns(sgb);
 
         // Act
@@ -72,7 +72,7 @@ public class SessionGameBoardServiceTests
     public void Create_ValidSessionGameBoard_CallsRepositoryAdd()
     {
         // Arrange
-        var sgb = new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid(), Data = "New" };
+        var sgb = new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Data = "New" };
 
         // Act
         var result = _service.Create(sgb);
@@ -87,7 +87,7 @@ public class SessionGameBoardServiceTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid(), Data = "Updated" };
+        var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid(), Data = "Updated" };
         _mockRepository.Setup(r => r.GetById(id)).Returns(sgb);
 
         // Act

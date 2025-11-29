@@ -1,5 +1,7 @@
 using GameplaySessionTracker.Services;
 using GameplaySessionTracker.Hubs;
+using GameplaySessionTracker.Repositories;
+using GameplaySessionTracker.GameRules;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,23 +27,22 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? "Server=localhost;Database=LastSpike;Integrated Security=true;TrustServerCertificate=true;";
 
 // Register repositories as Singletons with connection string
-builder.Services.AddSingleton<GameplaySessionTracker.Repositories.ISessionRepository>(
-    sp => new GameplaySessionTracker.Repositories.SessionRepository(connectionString));
-builder.Services.AddSingleton<GameplaySessionTracker.Repositories.IPlayerRepository>(
-    sp => new GameplaySessionTracker.Repositories.PlayerRepository(connectionString));
-builder.Services.AddSingleton<GameplaySessionTracker.Repositories.IGameBoardRepository>(
-    sp => new GameplaySessionTracker.Repositories.GameBoardRepository(connectionString));
+builder.Services.AddSingleton<ISessionRepository>(
+    sp => new SessionRepository(connectionString));
+builder.Services.AddSingleton<IPlayerRepository>(
+    sp => new PlayerRepository(connectionString));
+// builder.Services.AddSingleton<IGameBoardRepository>(
+//     sp => new GameBoardRepository(connectionString));
 
 // Register services as Singletons
 builder.Services.AddSingleton<ISessionService, SessionService>();
 builder.Services.AddSingleton<IPlayerService, PlayerService>();
-builder.Services.AddSingleton<IGameBoardService, GameBoardService>();
-builder.Services.AddSingleton<GameplaySessionTracker.Repositories.ISessionGameBoardRepository, GameplaySessionTracker.Repositories.SessionGameBoardRepository>();
+// builder.Services.AddSingleton<IGameBoardService, GameBoardService>();
+builder.Services.AddSingleton<ISessionGameBoardRepository, SessionGameBoardRepository>();
 builder.Services.AddSingleton<ISessionGameBoardService, SessionGameBoardService>();
-builder.Services.AddSingleton<GameplaySessionTracker.Repositories.ISessionPlayerRepository, GameplaySessionTracker.Repositories.SessionPlayerRepository>();
+builder.Services.AddSingleton<ISessionPlayerRepository, SessionPlayerRepository>();
 builder.Services.AddSingleton<ISessionPlayerService, SessionPlayerService>();
 builder.Services.AddSingleton<IMetricsService, MetricsService>();
-
 builder.Services.AddSignalR();
 
 var app = builder.Build();

@@ -10,35 +10,23 @@ namespace GameplaySessionTracker.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class SessionGameBoardsController : ControllerBase
-    {
-        private readonly ISessionGameBoardService _sessionGameBoardService;
-        private readonly ISessionService _sessionService;
-        private readonly IGameBoardService _gameBoardService;
-        private readonly IHubContext<GameHub> _hubContext;
-
-        public SessionGameBoardsController(
+    public class SessionGameBoardsController(
             ISessionGameBoardService sessionGameBoardService,
             ISessionService sessionService,
-            IGameBoardService gameBoardService,
             IHubContext<GameHub> hubContext)
-        {
-            _sessionGameBoardService = sessionGameBoardService;
-            _sessionService = sessionService;
-            _gameBoardService = gameBoardService;
-            _hubContext = hubContext;
-        }
+        : ControllerBase
+    {
 
         [HttpGet]
-        public ActionResult<IEnumerable<SessionGameBoard>> GetAll()
+        public async Task<ActionResult<IEnumerable<SessionGameBoard>>> GetAll()
         {
-            return Ok(_sessionGameBoardService.GetAll());
+            return Ok(sessionGameBoardService.GetAll());
         }
 
         [HttpGet("{id}")]
-        public ActionResult<SessionGameBoard> GetById(Guid id)
+        public async Task<ActionResult<SessionGameBoard>> GetById(Guid id)
         {
-            var sessionGameBoard = _sessionGameBoardService.GetById(id);
+            var sessionGameBoard = sessionGameBoardService.GetById(id);
             if (sessionGameBoard == null)
             {
                 return NotFound();
@@ -50,70 +38,68 @@ namespace GameplaySessionTracker.Controllers
         public async Task<ActionResult<SessionGameBoard>> Create(SessionGameBoard sessionGameBoard)
         {
             sessionGameBoard.Id = Guid.NewGuid();
-
-            // Validate SessionId
-            var session = _sessionService.GetById(sessionGameBoard.SessionId);
-            if (session == null)
-            {
-                return BadRequest($"SessionId {sessionGameBoard.SessionId} does not exist");
-            }
-
-            // Validate BoardId
-            var board = _gameBoardService.GetById(sessionGameBoard.BoardId);
-            if (board == null)
-            {
-                return BadRequest($"BoardId {sessionGameBoard.BoardId} does not exist");
-            }
-
-            var created = _sessionGameBoardService.Create(sessionGameBoard);
-            await _hubContext.Clients.All.SendAsync("SessionGameBoardUpdated", created);
+            var created = sessionGameBoardService.Create(sessionGameBoard);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, SessionGameBoard sessionGameBoard)
         {
-            if (id != sessionGameBoard.Id && sessionGameBoard.Id != Guid.Empty)
+            if (id != sessionGameBoard.Id)
             {
                 return BadRequest("ID mismatch");
             }
 
-            var existing = _sessionGameBoardService.GetById(id);
+            var existing = await sessionGameBoardService.GetById(id);
             if (existing == null)
             {
                 return NotFound();
             }
 
-            // Validate SessionId
-            var session = _sessionService.GetById(sessionGameBoard.SessionId);
-            if (session == null)
+            // Validate that the session exists
+            if (sessionService.GetById(sessionGameBoard.SessionId) == null)
             {
-                return BadRequest($"SessionId {sessionGameBoard.SessionId} does not exist");
+                return BadRequest("Session does not exist");
             }
 
-            // Validate BoardId
-            var board = _gameBoardService.GetById(sessionGameBoard.BoardId);
-            if (board == null)
-            {
-                return BadRequest($"BoardId {sessionGameBoard.BoardId} does not exist");
-            }
-
-            _sessionGameBoardService.Update(id, sessionGameBoard);
-            await _hubContext.Clients.All.SendAsync("SessionGameBoardUpdated", sessionGameBoard);
+            sessionGameBoardService.Update(id, sessionGameBoard);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var existing = _sessionGameBoardService.GetById(id);
+            var existing = sessionGameBoardService.GetById(id);
             if (existing == null)
             {
                 return NotFound();
             }
 
-            _sessionGameBoardService.Delete(id);
-            await _hubContext.Clients.All.SendAsync("SessionGameBoardUpdated", id);
+            sessionGameBoardService.Delete(id);
+            return NoContent();
+        }
+
+        [HttpPut("{id}/action")]
+        public async Task<IActionResult> UpdateAction(Guid id, Action action)
+        {
+            if (id != sessionGameBoard.Id)
+            {
+                return BadRequest("ID mismatch");
+            }
+
+            var existing = await sessionGameBoardService.GetById(id);
+            if (existing == null)
+            {
+                return NotFound();
+            }
+
+            // Validate that the session exists
+            if (sessionService.GetById(sessionGameBoard.SessionId) == null)
+            {
+                return BadRequest("Session does not exist");
+            }
+
+            sessionGameBoardService.Update(id, sessionGameBoard);
             return NoContent();
         }
     }

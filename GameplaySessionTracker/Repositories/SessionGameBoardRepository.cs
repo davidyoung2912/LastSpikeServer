@@ -30,7 +30,6 @@ namespace GameplaySessionTracker.Repositories
             if (existing != null)
             {
                 existing.SessionId = sessionGameBoard.SessionId;
-                existing.BoardId = sessionGameBoard.BoardId;
                 existing.Data = sessionGameBoard.Data;
             }
         }

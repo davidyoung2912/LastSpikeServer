@@ -4,21 +4,22 @@ using GameplaySessionTracker.Services;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace GameplaySessionTracker.Tests.Controllers;
 
 public class SessionsControllerTests
 {
     private readonly Mock<ISessionService> _mockService;
+    private readonly Mock<ISessionGameBoardService> _mockBoardService;
     private readonly Mock<IPlayerService> _mockPlayerService;
-    private readonly Mock<IGameBoardService> _mockBoardService;
     private readonly SessionsController _controller;
 
     public SessionsControllerTests()
     {
         _mockService = new Mock<ISessionService>();
+        _mockBoardService = new Mock<ISessionGameBoardService>();
         _mockPlayerService = new Mock<IPlayerService>();
-        _mockBoardService = new Mock<IGameBoardService>();
         _controller = new SessionsController(_mockService.Object, _mockBoardService.Object, _mockPlayerService.Object);
     }
 
@@ -47,33 +48,25 @@ public class SessionsControllerTests
         Assert.IsType<NotFoundResult>(result.Result);
     }
 
-    [Fact]
-    public void Create_InvalidBoardId_ReturnsBadRequest()
-    {
-        var session = new SessionData { BoardId = Guid.NewGuid() };
-        _mockBoardService.Setup(s => s.GetById(session.BoardId)).Returns((GameBoard?)null);
-        var result = _controller.Create(session);
-        Assert.IsType<BadRequestObjectResult>(result.Result);
-    }
+
 
     [Fact]
-    public void Create_InvalidPlayerId_ReturnsBadRequest()
+    public async Task Create_InvalidPlayerId_ReturnsBadRequest()
     {
         var playerId = Guid.NewGuid();
-        var session = new SessionData { BoardId = Guid.NewGuid(), PlayerIds = new List<Guid> { playerId } };
-        _mockBoardService.Setup(s => s.GetById(session.BoardId)).Returns(new GameBoard { Id = session.BoardId });
+        var session = new SessionData { PlayerIds = new List<Guid> { playerId } };
         _mockPlayerService.Setup(s => s.GetById(playerId)).Returns((Player?)null);
-        var result = _controller.Create(session);
+        var result = await _controller.Create(session);
         Assert.IsType<BadRequestObjectResult>(result.Result);
     }
 
     [Fact]
-    public void Create_Valid_ReturnsCreated()
+    public async Task Create_Valid_ReturnsCreated()
     {
         var session = new SessionData { BoardId = Guid.NewGuid(), PlayerIds = new List<Guid>() };
-        _mockBoardService.Setup(s => s.GetById(session.BoardId)).Returns(new GameBoard { Id = session.BoardId });
+        _mockBoardService.Setup(s => s.GetById(session.BoardId)).ReturnsAsync(new SessionGameBoard { Id = session.BoardId });
         _mockService.Setup(s => s.Create(It.IsAny<SessionData>())).Returns(new SessionData { Id = Guid.NewGuid() });
-        var result = _controller.Create(session);
+        var result = await _controller.Create(session);
         Assert.IsType<CreatedAtActionResult>(result.Result);
     }
 
@@ -82,7 +75,7 @@ public class SessionsControllerTests
     {
         var sessionId = Guid.NewGuid();
         var playerId = Guid.NewGuid();
-        var session = new SessionData { Id = sessionId, BoardId = Guid.NewGuid(), PlayerIds = new List<Guid>() };
+        var session = new SessionData { Id = sessionId, PlayerIds = new List<Guid>() };
         _mockService.Setup(s => s.GetById(sessionId)).Returns(session);
         _mockPlayerService.Setup(s => s.GetById(playerId)).Returns(new Player { Id = playerId });
 
@@ -98,7 +91,7 @@ public class SessionsControllerTests
     {
         var sessionId = Guid.NewGuid();
         var playerId = Guid.NewGuid();
-        var session = new SessionData { Id = sessionId, BoardId = Guid.NewGuid(), PlayerIds = new List<Guid> { playerId } };
+        var session = new SessionData { Id = sessionId, PlayerIds = new List<Guid> { playerId } };
         _mockService.Setup(s => s.GetById(sessionId)).Returns(session);
 
         var result = _controller.RemovePlayerFromSession(sessionId, playerId);
@@ -109,56 +102,57 @@ public class SessionsControllerTests
     }
 
     [Fact]
-    public void Update_Valid_ReturnsNoContent()
+    public async Task Update_Valid_ReturnsNoContent()
     {
         var id = Guid.NewGuid();
         var session = new SessionData { Id = id, BoardId = Guid.NewGuid() };
         _mockService.Setup(s => s.GetById(id)).Returns(session);
-        _mockBoardService.Setup(s => s.GetById(session.BoardId)).Returns(new GameBoard { Id = session.BoardId });
-        var result = _controller.Update(id, session);
+        _mockBoardService.Setup(s => s.GetById(session.BoardId)).ReturnsAsync(new SessionGameBoard { Id = session.BoardId });
+        var result = await _controller.Update(id, session);
         Assert.IsType<NoContentResult>(result);
     }
 
     [Fact]
-    public void Update_NonExistent_ReturnsNotFound()
+    public async Task Update_NonExistent_ReturnsNotFound()
     {
         var id = Guid.NewGuid();
         var session = new SessionData { Id = id };
         _mockService.Setup(s => s.GetById(id)).Returns((SessionData?)null);
-        var result = _controller.Update(id, session);
+        var result = await _controller.Update(id, session);
         Assert.IsType<NotFoundResult>(result);
     }
 
     [Fact]
-    public void Update_IdMismatch_ReturnsBadRequest()
+    public async Task Update_IdMismatch_ReturnsBadRequest()
     {
         var id = Guid.NewGuid();
         var session = new SessionData { Id = Guid.NewGuid() };
-        var result = _controller.Update(id, session);
+        var result = await _controller.Update(id, session);
         Assert.IsType<BadRequestObjectResult>(result);
     }
 
+
+
     [Fact]
-    public void Update_InvalidBoardId_ReturnsBadRequest()
+    public async Task Update_InvalidBoardId_ReturnsBadRequest()
     {
         var id = Guid.NewGuid();
         var session = new SessionData { Id = id, BoardId = Guid.NewGuid() };
         _mockService.Setup(s => s.GetById(id)).Returns(session);
-        _mockBoardService.Setup(s => s.GetById(session.BoardId)).Returns((GameBoard?)null);
-        var result = _controller.Update(id, session);
+        _mockBoardService.Setup(s => s.GetById(session.BoardId)).ReturnsAsync((SessionGameBoard?)null);
+        var result = await _controller.Update(id, session);
         Assert.IsType<BadRequestObjectResult>(result);
     }
 
     [Fact]
-    public void Update_InvalidPlayerId_ReturnsBadRequest()
+    public async Task Update_InvalidPlayerId_ReturnsBadRequest()
     {
         var id = Guid.NewGuid();
         var playerId = Guid.NewGuid();
-        var session = new SessionData { Id = id, BoardId = Guid.NewGuid(), PlayerIds = new List<Guid> { playerId } };
+        var session = new SessionData { Id = id, PlayerIds = new List<Guid> { playerId } };
         _mockService.Setup(s => s.GetById(id)).Returns(session);
-        _mockBoardService.Setup(s => s.GetById(session.BoardId)).Returns(new GameBoard { Id = session.BoardId });
         _mockPlayerService.Setup(s => s.GetById(playerId)).Returns((Player?)null);
-        var result = _controller.Update(id, session);
+        var result = await _controller.Update(id, session);
         Assert.IsType<BadRequestObjectResult>(result);
     }
 

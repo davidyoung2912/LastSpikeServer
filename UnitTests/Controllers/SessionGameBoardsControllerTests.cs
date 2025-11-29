@@ -14,7 +14,7 @@ public class SessionGameBoardsControllerTests
 {
     private readonly Mock<ISessionGameBoardService> _mockService;
     private readonly Mock<ISessionService> _mockSessionService;
-    private readonly Mock<IGameBoardService> _mockBoardService;
+
     private readonly Mock<IHubContext<GameHub>> _mockHubContext;
     private readonly SessionGameBoardsController _controller;
 
@@ -22,7 +22,7 @@ public class SessionGameBoardsControllerTests
     {
         _mockService = new Mock<ISessionGameBoardService>();
         _mockSessionService = new Mock<ISessionService>();
-        _mockBoardService = new Mock<IGameBoardService>();
+
         _mockHubContext = new Mock<IHubContext<GameHub>>();
 
         var mockClients = new Mock<IHubClients>();
@@ -39,7 +39,7 @@ public class SessionGameBoardsControllerTests
         mockClients.Setup(c => c.All).Returns(mockClientProxy.Object);
         _mockHubContext.Setup(c => c.Clients).Returns(mockClients.Object);
 
-        _controller = new SessionGameBoardsController(_mockService.Object, _mockSessionService.Object, _mockBoardService.Object, _mockHubContext.Object);
+        _controller = new SessionGameBoardsController(_mockService.Object, _mockSessionService.Object, _mockHubContext.Object);
     }
 
     [Fact]
@@ -70,28 +70,19 @@ public class SessionGameBoardsControllerTests
     [Fact]
     public async Task Create_InvalidSessionId_ReturnsBadRequest()
     {
-        var sgb = new SessionGameBoard { SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid() };
+        var sgb = new SessionGameBoard { SessionId = Guid.NewGuid() };
         _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).Returns((SessionData?)null);
         var result = await _controller.Create(sgb);
         Assert.IsType<BadRequestObjectResult>(result.Result);
     }
 
-    [Fact]
-    public async Task Create_InvalidBoardId_ReturnsBadRequest()
-    {
-        var sgb = new SessionGameBoard { SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid() };
-        _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).Returns(new SessionData { Id = sgb.SessionId });
-        _mockBoardService.Setup(s => s.GetById(sgb.BoardId)).Returns((GameBoard?)null);
-        var result = await _controller.Create(sgb);
-        Assert.IsType<BadRequestObjectResult>(result.Result);
-    }
+
 
     [Fact]
     public async Task Create_Valid_ReturnsCreated()
     {
-        var sgb = new SessionGameBoard { SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid() };
+        var sgb = new SessionGameBoard { SessionId = Guid.NewGuid() };
         _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).Returns(new SessionData { Id = sgb.SessionId });
-        _mockBoardService.Setup(s => s.GetById(sgb.BoardId)).Returns(new GameBoard { Id = sgb.BoardId });
         _mockService.Setup(s => s.Create(It.IsAny<SessionGameBoard>())).Returns(new SessionGameBoard { Id = Guid.NewGuid() });
         var result = await _controller.Create(sgb);
         Assert.IsType<CreatedAtActionResult>(result.Result);
@@ -101,10 +92,9 @@ public class SessionGameBoardsControllerTests
     public async Task Update_Valid_ReturnsNoContent()
     {
         var id = Guid.NewGuid();
-        var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid() };
+        var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid() };
         _mockService.Setup(s => s.GetById(id)).Returns(sgb);
         _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).Returns(new SessionData { Id = sgb.SessionId });
-        _mockBoardService.Setup(s => s.GetById(sgb.BoardId)).Returns(new GameBoard { Id = sgb.BoardId });
         var result = await _controller.Update(id, sgb);
         Assert.IsType<NoContentResult>(result);
     }
@@ -113,7 +103,7 @@ public class SessionGameBoardsControllerTests
     public async Task Update_NonExistent_ReturnsNotFound()
     {
         var id = Guid.NewGuid();
-        var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid() };
+        var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid() };
         _mockService.Setup(s => s.GetById(id)).Returns((SessionGameBoard?)null);
         var result = await _controller.Update(id, sgb);
         Assert.IsType<NotFoundResult>(result);
@@ -123,7 +113,7 @@ public class SessionGameBoardsControllerTests
     public async Task Update_IdMismatch_ReturnsBadRequest()
     {
         var id = Guid.NewGuid();
-        var sgb = new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid() };
+        var sgb = new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid() };
         var result = await _controller.Update(id, sgb);
         Assert.IsType<BadRequestObjectResult>(result);
     }
@@ -132,24 +122,14 @@ public class SessionGameBoardsControllerTests
     public async Task Update_InvalidSessionId_ReturnsBadRequest()
     {
         var id = Guid.NewGuid();
-        var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid() };
+        var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid() };
         _mockService.Setup(s => s.GetById(id)).Returns(sgb);
         _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).Returns((SessionData?)null);
         var result = await _controller.Update(id, sgb);
         Assert.IsType<BadRequestObjectResult>(result);
     }
 
-    [Fact]
-    public async Task Update_InvalidBoardId_ReturnsBadRequest()
-    {
-        var id = Guid.NewGuid();
-        var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid() };
-        _mockService.Setup(s => s.GetById(id)).Returns(sgb);
-        _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).Returns(new SessionData { Id = sgb.SessionId });
-        _mockBoardService.Setup(s => s.GetById(sgb.BoardId)).Returns((GameBoard?)null);
-        var result = await _controller.Update(id, sgb);
-        Assert.IsType<BadRequestObjectResult>(result);
-    }
+
 
     [Fact]
     public async Task Delete_NonExistent_ReturnsNotFound()
