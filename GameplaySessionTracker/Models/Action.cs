@@ -7,9 +7,3 @@ namespace GameplaySessionTracker.Models
         public string Data { get; set; } = string.Empty;
     }
 }
-
-{
-    "
-action: action",
-"Data": { }
-}

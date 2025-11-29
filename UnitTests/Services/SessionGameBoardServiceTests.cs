@@ -6,17 +6,10 @@ using Xunit;
 
 namespace GameplaySessionTracker.Tests.Services;
 
-public class SessionGameBoardServiceTests
+public class SessionGameBoardServiceTests(
+        SessionGameBoardService service,
+        Mock<ISessionGameBoardRepository> mockRepository)
 {
-    private readonly Mock<ISessionGameBoardRepository> _mockRepository;
-    private readonly SessionGameBoardService _service;
-
-    public SessionGameBoardServiceTests()
-    {
-        _mockRepository = new Mock<ISessionGameBoardRepository>();
-        _service = new SessionGameBoardService(_mockRepository.Object);
-    }
-
     [Fact]
     public void GetAll_ReturnsAllSessionGameBoards()
     {
@@ -26,14 +19,14 @@ public class SessionGameBoardServiceTests
             new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Data = "Data1" },
             new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Data = "Data2" }
         };
-        _mockRepository.Setup(r => r.GetAll()).Returns(sessionGameBoards);
+        mockRepository.Setup(r => r.GetAll()).Returns(sessionGameBoards);
 
         // Act
-        var result = _service.GetAll();
+        var result = service.GetAll().Result;
 
         // Assert
         Assert.Equal(2, result.Count());
-        _mockRepository.Verify(r => r.GetAll(), Times.Once);
+        mockRepository.Verify(r => r.GetAll(), Times.Once);
     }
 
     [Fact]
@@ -42,15 +35,15 @@ public class SessionGameBoardServiceTests
         // Arrange
         var id = Guid.NewGuid();
         var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid(), Data = "Test" };
-        _mockRepository.Setup(r => r.GetById(id)).Returns(sgb);
+        mockRepository.Setup(r => r.GetById(id)).Returns(sgb);
 
         // Act
-        var result = _service.GetById(id);
+        var result = service.GetById(id).Result;
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal(id, result.Id);
-        _mockRepository.Verify(r => r.GetById(id), Times.Once);
+        mockRepository.Verify(r => r.GetById(id), Times.Once);
     }
 
     [Fact]
@@ -58,14 +51,14 @@ public class SessionGameBoardServiceTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        _mockRepository.Setup(r => r.GetById(id)).Returns((SessionGameBoard?)null);
+        mockRepository.Setup(r => r.GetById(id)).Returns((SessionGameBoard?)null);
 
         // Act
-        var result = _service.GetById(id);
+        var result = service.GetById(id);
 
         // Assert
         Assert.Null(result);
-        _mockRepository.Verify(r => r.GetById(id), Times.Once);
+        mockRepository.Verify(r => r.GetById(id), Times.Once);
     }
 
     [Fact]
@@ -75,11 +68,11 @@ public class SessionGameBoardServiceTests
         var sgb = new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Data = "New" };
 
         // Act
-        var result = _service.Create(sgb);
+        var result = service.Create(sgb).Result;
 
         // Assert
         Assert.Equal(sgb, result);
-        _mockRepository.Verify(r => r.Add(sgb), Times.Once);
+        mockRepository.Verify(r => r.Add(sgb), Times.Once);
     }
 
     [Fact]
@@ -88,13 +81,13 @@ public class SessionGameBoardServiceTests
         // Arrange
         var id = Guid.NewGuid();
         var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid(), Data = "Updated" };
-        _mockRepository.Setup(r => r.GetById(id)).Returns(sgb);
+        mockRepository.Setup(r => r.GetById(id)).Returns(sgb);
 
         // Act
-        _service.Update(id, sgb);
+        service.Update(id, sgb);
 
         // Assert
-        _mockRepository.Verify(r => r.Update(sgb), Times.Once);
+        mockRepository.Verify(r => r.Update(sgb), Times.Once);
     }
 
     [Fact]
@@ -104,9 +97,9 @@ public class SessionGameBoardServiceTests
         var id = Guid.NewGuid();
 
         // Act
-        _service.Delete(id);
+        service.Delete(id);
 
         // Assert
-        _mockRepository.Verify(r => r.Delete(id), Times.Once);
+        mockRepository.Verify(r => r.Delete(id), Times.Once);
     }
 }

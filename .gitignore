@@ -3,4 +3,4 @@ GameplaySessionTracker/obj/**
 UnitTests/bin/**
 UnitTests/obj/**
 UnitTests/TestResults/**
-
+UnitTests/CoverageReport/**

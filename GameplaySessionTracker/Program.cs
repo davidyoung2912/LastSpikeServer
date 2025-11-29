@@ -40,8 +40,6 @@ builder.Services.AddSingleton<IPlayerService, PlayerService>();
 // builder.Services.AddSingleton<IGameBoardService, GameBoardService>();
 builder.Services.AddSingleton<ISessionGameBoardRepository, SessionGameBoardRepository>();
 builder.Services.AddSingleton<ISessionGameBoardService, SessionGameBoardService>();
-builder.Services.AddSingleton<ISessionPlayerRepository, SessionPlayerRepository>();
-builder.Services.AddSingleton<ISessionPlayerService, SessionPlayerService>();
 builder.Services.AddSingleton<IMetricsService, MetricsService>();
 builder.Services.AddSignalR();
 

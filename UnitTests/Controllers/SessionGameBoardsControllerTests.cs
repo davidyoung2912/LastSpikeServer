@@ -45,7 +45,7 @@ public class SessionGameBoardsControllerTests
     [Fact]
     public void GetAll_ReturnsOk()
     {
-        _mockService.Setup(s => s.GetAll()).Returns(new List<SessionGameBoard>());
+        _mockService.Setup(s => s.GetAll()).Returns(Task.FromResult<IEnumerable<SessionGameBoard>>(new List<SessionGameBoard>()));
         var result = _controller.GetAll();
         Assert.IsType<OkObjectResult>(result.Result);
     }
@@ -54,7 +54,7 @@ public class SessionGameBoardsControllerTests
     public void GetById_Existing_ReturnsOk()
     {
         var sgb = new SessionGameBoard { Id = Guid.NewGuid() };
-        _mockService.Setup(s => s.GetById(sgb.Id)).Returns(sgb);
+        _mockService.Setup(s => s.GetById(sgb.Id)).Returns(Task.FromResult<SessionGameBoard?>(sgb));
         var result = _controller.GetById(sgb.Id);
         Assert.IsType<OkObjectResult>(result.Result);
     }
@@ -62,7 +62,7 @@ public class SessionGameBoardsControllerTests
     [Fact]
     public void GetById_NonExistent_ReturnsNotFound()
     {
-        _mockService.Setup(s => s.GetById(It.IsAny<Guid>())).Returns((SessionGameBoard?)null);
+        _mockService.Setup(s => s.GetById(It.IsAny<Guid>())).Returns(Task.FromResult<SessionGameBoard?>(null));
         var result = _controller.GetById(Guid.NewGuid());
         Assert.IsType<NotFoundResult>(result.Result);
     }
@@ -83,7 +83,7 @@ public class SessionGameBoardsControllerTests
     {
         var sgb = new SessionGameBoard { SessionId = Guid.NewGuid() };
         _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).Returns(new SessionData { Id = sgb.SessionId });
-        _mockService.Setup(s => s.Create(It.IsAny<SessionGameBoard>())).Returns(new SessionGameBoard { Id = Guid.NewGuid() });
+        _mockService.Setup(s => s.Create(It.IsAny<SessionGameBoard>())).Returns(Task.FromResult(new SessionGameBoard { Id = Guid.NewGuid() }));
         var result = await _controller.Create(sgb);
         Assert.IsType<CreatedAtActionResult>(result.Result);
     }
@@ -93,7 +93,7 @@ public class SessionGameBoardsControllerTests
     {
         var id = Guid.NewGuid();
         var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid() };
-        _mockService.Setup(s => s.GetById(id)).Returns(sgb);
+        _mockService.Setup(s => s.GetById(id)).Returns(Task.FromResult<SessionGameBoard?>(sgb));
         _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).Returns(new SessionData { Id = sgb.SessionId });
         var result = await _controller.Update(id, sgb);
         Assert.IsType<NoContentResult>(result);
@@ -104,7 +104,7 @@ public class SessionGameBoardsControllerTests
     {
         var id = Guid.NewGuid();
         var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid() };
-        _mockService.Setup(s => s.GetById(id)).Returns((SessionGameBoard?)null);
+        _mockService.Setup(s => s.GetById(id)).Returns(Task.FromResult<SessionGameBoard?>(null));
         var result = await _controller.Update(id, sgb);
         Assert.IsType<NotFoundResult>(result);
     }
@@ -123,7 +123,7 @@ public class SessionGameBoardsControllerTests
     {
         var id = Guid.NewGuid();
         var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid() };
-        _mockService.Setup(s => s.GetById(id)).Returns(sgb);
+        _mockService.Setup(s => s.GetById(id)).Returns(Task.FromResult<SessionGameBoard?>(sgb));
         _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).Returns((SessionData?)null);
         var result = await _controller.Update(id, sgb);
         Assert.IsType<BadRequestObjectResult>(result);
@@ -135,7 +135,7 @@ public class SessionGameBoardsControllerTests
     public async Task Delete_NonExistent_ReturnsNotFound()
     {
         var id = Guid.NewGuid();
-        _mockService.Setup(s => s.GetById(id)).Returns((SessionGameBoard?)null);
+        _mockService.Setup(s => s.GetById(id)).Returns(Task.FromResult<SessionGameBoard?>(null));
         var result = await _controller.Delete(id);
         Assert.IsType<NotFoundResult>(result);
     }
@@ -144,7 +144,7 @@ public class SessionGameBoardsControllerTests
     public async Task Delete_Existing_ReturnsNoContent()
     {
         var id = Guid.NewGuid();
-        _mockService.Setup(s => s.GetById(id)).Returns(new SessionGameBoard { Id = id });
+        _mockService.Setup(s => s.GetById(id)).Returns(Task.FromResult<SessionGameBoard?>(new SessionGameBoard { Id = id }));
         var result = await _controller.Delete(id);
         Assert.IsType<NoContentResult>(result);
     }

@@ -79,28 +79,28 @@ namespace GameplaySessionTracker.Controllers
             return NoContent();
         }
 
-        [HttpPut("{id}/action")]
-        public async Task<IActionResult> UpdateAction(Guid id, Action action)
-        {
-            if (id != sessionGameBoard.Id)
-            {
-                return BadRequest("ID mismatch");
-            }
+        //     [HttpPut("{id}/action")]
+        //     public async Task<IActionResult> UpdateAction(Guid id, Action action)
+        //     {
+        //         if (id != sessionGameBoard.Id)
+        //         {
+        //             return BadRequest("ID mismatch");
+        //         }
 
-            var existing = await sessionGameBoardService.GetById(id);
-            if (existing == null)
-            {
-                return NotFound();
-            }
+        //         var existing = await sessionGameBoardService.GetById(id);
+        //         if (existing == null)
+        //         {
+        //             return NotFound();
+        //         }
 
-            // Validate that the session exists
-            if (sessionService.GetById(sessionGameBoard.SessionId) == null)
-            {
-                return BadRequest("Session does not exist");
-            }
+        //         // Validate that the session exists
+        //         if (sessionService.GetById(sessionGameBoard.SessionId) == null)
+        //         {
+        //             return BadRequest("Session does not exist");
+        //         }
 
-            sessionGameBoardService.Update(id, sessionGameBoard);
-            return NoContent();
-        }
+        //         sessionGameBoardService.Update(id, sessionGameBoard);
+        //         return NoContent();
+        //     }
     }
 }

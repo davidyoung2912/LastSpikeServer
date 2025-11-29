@@ -29,7 +29,6 @@ public class SessionGameBoardRepositoryTests
         {
             Id = Guid.NewGuid(),
             SessionId = Guid.NewGuid(),
-            BoardId = Guid.NewGuid(),
             Data = "Test Data"
         };
 
@@ -41,7 +40,6 @@ public class SessionGameBoardRepositoryTests
         Assert.NotNull(result);
         Assert.Equal(sessionGameBoard.Id, result.Id);
         Assert.Equal(sessionGameBoard.SessionId, result.SessionId);
-        Assert.Equal(sessionGameBoard.BoardId, result.BoardId);
         Assert.Equal(sessionGameBoard.Data, result.Data);
     }
 
@@ -67,7 +65,6 @@ public class SessionGameBoardRepositoryTests
         {
             Id = Guid.NewGuid(),
             SessionId = Guid.NewGuid(),
-            BoardId = Guid.NewGuid(),
             Data = "Original Data"
         };
         repository.Add(sessionGameBoard);
@@ -91,7 +88,6 @@ public class SessionGameBoardRepositoryTests
         {
             Id = Guid.NewGuid(),
             SessionId = Guid.NewGuid(),
-            BoardId = Guid.NewGuid(),
             Data = "Test Data"
         };
 
@@ -112,7 +108,6 @@ public class SessionGameBoardRepositoryTests
         {
             Id = Guid.NewGuid(),
             SessionId = Guid.NewGuid(),
-            BoardId = Guid.NewGuid(),
             Data = "Test Data"
         };
         repository.Add(sessionGameBoard);
@@ -140,8 +135,8 @@ public class SessionGameBoardRepositoryTests
     {
         // Arrange
         var repository = new SessionGameBoardRepository();
-        var sgb1 = new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid(), Data = "Data1" };
-        var sgb2 = new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), BoardId = Guid.NewGuid(), Data = "Data2" };
+        var sgb1 = new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Data = "Data1" };
+        var sgb2 = new SessionGameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Data = "Data2" };
 
         // Act
         repository.Add(sgb1);
