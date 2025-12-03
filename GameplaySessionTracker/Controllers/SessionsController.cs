@@ -17,15 +17,15 @@ namespace GameplaySessionTracker.Controllers
     {
 
         [HttpGet]
-        public ActionResult<IEnumerable<SessionData>> GetAll()
+        public async Task<ActionResult<IEnumerable<SessionData>>> GetAll()
         {
-            return Ok(sessionService.GetAll());
+            return Ok(await sessionService.GetAll());
         }
 
         [HttpGet("{id}")]
-        public ActionResult<SessionData> GetById(Guid id)
+        public async Task<ActionResult<SessionData>> GetById(Guid id)
         {
-            var session = sessionService.GetById(id);
+            var session = await sessionService.GetById(id);
             if (session == null)
             {
                 return NotFound();
@@ -36,28 +36,16 @@ namespace GameplaySessionTracker.Controllers
         [HttpPost]
         public async Task<ActionResult<SessionData>> Create(SessionData session)
         {
+            // ignore user provided guids
             session.Id = Guid.NewGuid();
+            session.BoardId = Guid.NewGuid();
+            session.StartTime = DateTime.UtcNow;
 
-            // If we don't specify a board, create a new one
-            if (session.BoardId == Guid.Empty)
-            {
-                session.BoardId = Guid.NewGuid();
-            }
+            var createdSession = await sessionService.Create(session);
 
-            var board = await sessionGameBoardService.GetById(session.BoardId) ??
-                await sessionGameBoardService.Create(
+            var board = await sessionGameBoardService.Create(
                     new SessionGameBoard { Id = session.BoardId, SessionId = session.Id });
 
-            // Validate PlayerIds
-            foreach (var playerId in session.PlayerIds)
-            {
-                if (playerService.GetById(playerId) == null)
-                {
-                    return BadRequest($"PlayerId {playerId} does not exist");
-                }
-            }
-
-            var createdSession = sessionService.Create(session);
             return CreatedAtAction(nameof(GetById), new { id = createdSession.Id }, createdSession);
         }
 
@@ -69,7 +57,7 @@ namespace GameplaySessionTracker.Controllers
                 return BadRequest("ID mismatch");
             }
 
-            var existing = sessionService.GetById(id);
+            var existing = await sessionService.GetById(id);
             if (existing == null)
             {
                 return NotFound();
@@ -95,28 +83,28 @@ namespace GameplaySessionTracker.Controllers
                 }
             }
 
-            sessionService.Update(id, session);
+            await sessionService.Update(id, session);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(Guid id)
+        public async Task<IActionResult> Delete(Guid id)
         {
-            var existing = sessionService.GetById(id);
+            var existing = await sessionService.GetById(id);
             if (existing == null)
             {
                 return NotFound();
             }
 
-            sessionService.Delete(id);
+            await sessionService.Delete(id);
             return NoContent();
         }
 
         [HttpPost("{sessionId}/players/{playerId}")]
-        public IActionResult AddPlayerToSession(Guid sessionId, Guid playerId)
+        public async Task<IActionResult> AddPlayerToSession(Guid sessionId, Guid playerId)
         {
             // Validate session exists
-            var session = sessionService.GetById(sessionId);
+            var session = await sessionService.GetById(sessionId);
             if (session == null)
             {
                 return NotFound($"Session with ID {sessionId} not found");
@@ -141,16 +129,16 @@ namespace GameplaySessionTracker.Controllers
                 session.StartTime = DateTime.UtcNow;
             }
             session.PlayerIds.Add(playerId);
-            sessionService.Update(sessionId, session);
+            await sessionService.Update(sessionId, session);
 
             return Ok(new { message = $"Player {playerId} added to session {sessionId}" });
         }
 
         [HttpDelete("{sessionId}/players/{playerId}")]
-        public IActionResult RemovePlayerFromSession(Guid sessionId, Guid playerId)
+        public async Task<IActionResult> RemovePlayerFromSession(Guid sessionId, Guid playerId)
         {
             // Validate session exists
-            var session = sessionService.GetById(sessionId);
+            var session = await sessionService.GetById(sessionId);
             if (session == null)
             {
                 return NotFound($"Session with ID {sessionId} not found");
@@ -168,7 +156,7 @@ namespace GameplaySessionTracker.Controllers
             {
                 session.EndTime = DateTime.UtcNow;
             }
-            sessionService.Update(sessionId, session);
+            await sessionService.Update(sessionId, session);
 
             return Ok(new { message = $"Player {playerId} removed from session {sessionId}" });
         }

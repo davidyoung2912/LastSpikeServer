@@ -18,13 +18,13 @@ namespace GameplaySessionTracker.Hubs
 
         public async Task JoinSession(string sessionId)
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, $"session_{sessionId}");
+            await Groups.AddToGroupAsync(Context.ConnectionId, sessionId);
             Console.WriteLine($"Client {Context.ConnectionId} joined session {sessionId}");
         }
 
         public async Task LeaveSession(string sessionId)
         {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"session_{sessionId}");
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, sessionId);
             Console.WriteLine($"Client {Context.ConnectionId} left session {sessionId}");
         }
     }

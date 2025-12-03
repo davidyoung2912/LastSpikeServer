@@ -1,20 +1,36 @@
 using System.Text.Json.Serialization;
+using GameplaySessionTracker.GameRules;
 
 namespace GameplaySessionTracker.Models
 {
     public enum ActionType
     {
-        Roll,
+        /*         
+        Go,
+        Track,
+        SettlerRents,
+        Land,
+        RoadbedCosts,
+        Rebellion,
+        EndOfTrack,
+        LandClaims,
+        SurveyFees
+        */
+        Move,
         Accept,
-        Pass
+        Pass,
+        Rebellion,
+        Trade,
+        PlaceTrack
     }
 
     public class GameAction
     {
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public ActionType Name { get; set; }
-        public Guid PlayerId { get; set; }
+        public required ActionType Type { get; set; }
+        public required Guid PlayerId { get; set; }
+        // TODO: add trade data 
 
-        public string Data { get; set; } = string.Empty;
+        public CityPair? Target { get; set; }
     }
 }

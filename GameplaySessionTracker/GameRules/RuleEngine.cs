@@ -4,11 +4,13 @@ using GameplaySessionTracker.Models;
 namespace GameplaySessionTracker.GameRules
 {
     public record GameState(
-        Dictionary<Guid, PlayerState> Players, // the order of this list determines turn order
+        OrderedDictionary<Guid, PlayerState> Players, // the order of this list determines turn order
         List<Route> Routes, // how much track on each route
         List<Property> Properties, // "deck" of properties 
         bool IsGameOver,
-        Guid CurrentPlayerId // which player's turn it is
+        Guid CurrentPlayerId, // which player's turn it is
+                              // TODO: add last dice rolled tuple for clientside display
+        TurnPhase TurnPhase
     );
 
     public record PlayerState(
@@ -42,6 +44,7 @@ namespace GameplaySessionTracker.GameRules
 
     public static class RuleEngine
     {
+
         /// <summary>
         /// Creates a new game state with the given player IDs
         /// </summary>
@@ -50,11 +53,12 @@ namespace GameplaySessionTracker.GameRules
         public static GameState CreateNewGameState(List<Guid> playerIDs)
         {
             var state = new GameState(
-            new Dictionary<Guid, PlayerState>(),
+            new OrderedDictionary<Guid, PlayerState>(),
             new List<Route>(),
             new List<Property>(),
             false,
-            playerIDs[0]);
+            playerIDs[0],
+            TurnPhase.Start);
             foreach (var p in playerIDs)
             {
                 state.Players.Add(p, new PlayerState(GameConstants.PlayerStartingMoney, 0, false));
@@ -62,6 +66,8 @@ namespace GameplaySessionTracker.GameRules
             return state;
         }
 
+        #region Game Actions
+        // every method here advances the game state and the turn phase
         /// <summary>
         /// Moves the current player forward according to a dice roll
         /// </summary>
@@ -81,17 +87,62 @@ namespace GameplaySessionTracker.GameRules
             {
                 BoardPosition = newBoardPosition
             };
-            return state;
+            return state with
+            {
+                TurnPhase = TurnPhase.SpaceOption
+            };
         }
 
-        // the player that passes go gets CPRSubsidy (5k)
-        public static GameState PassGo(GameState state)
+        public static GameState SettlerRents(GameState state)
         {
             state.Players[state.CurrentPlayerId] = state.Players[state.CurrentPlayerId] with
             {
-                Money = state.Players[state.CurrentPlayerId].Money + GameConstants.CPRSubsidy
+                Money = state.Players[state.CurrentPlayerId].Money +
+                state.Properties.Count(p => p.Owner_PID == state.CurrentPlayerId) * 1000
             };
-            return state;
+            return state with
+            {
+                TurnPhase = TurnPhase.End
+            };
+        }
+
+        public static GameState RoadbedCosts(GameState state)
+        {
+            state.Players[state.CurrentPlayerId] = state.Players[state.CurrentPlayerId] with
+            {
+                Money = state.Players[state.CurrentPlayerId].Money -
+                state.Properties.Count(p => p.Owner_PID == state.CurrentPlayerId) * 1000
+            };
+            return state with
+            {
+                TurnPhase = TurnPhase.End
+            };
+        }
+
+        public static GameState SurveyFees(GameState state)
+        {
+            state.Players[state.CurrentPlayerId] = state.Players[state.CurrentPlayerId] with
+            {
+                Money = state.Players[state.CurrentPlayerId].Money +
+                state.Players.Count * 3000
+            };
+            return state with
+            {
+                TurnPhase = TurnPhase.End
+            };
+        }
+
+        public static GameState LandClaims(GameState state)
+        {
+            state.Players[state.CurrentPlayerId] = state.Players[state.CurrentPlayerId] with
+            {
+                Money = state.Players[state.CurrentPlayerId].Money -
+                DiceRoll() * 1000
+            };
+            return state with
+            {
+                TurnPhase = TurnPhase.End
+            };
         }
         /// <summary>
         /// Draws a property from the deck of 5 of each city, removing it from the deck and adding it to the player's properties
@@ -99,41 +150,27 @@ namespace GameplaySessionTracker.GameRules
         /// <param name="state"></param>
         /// <param name="cost"></param>
         /// <returns></returns>
-        public static GameState BuyProperty(GameState state, int cost)
+        public static GameState BuyProperty(GameState state)
         {
-            // Create a full deck of 5 of each city
-            var deck = new List<City>();
-            foreach (City city in Enum.GetValues<City>())
+            PaySpaceCost(state);
+            state = DrawProperty(state);
+            return state with
             {
-                for (int i = 0; i < 5; i++)
-                {
-                    deck.Add(city);
-                }
-            }
+                TurnPhase = TurnPhase.End
+            };
+        }
 
-            // Remove properties already present in state.Properties
-            foreach (var property in state.Properties)
-            {
-                deck.Remove(property.City);
-            }
-
-            // If deck is empty, return state unchanged
-            if (deck.Count == 0)
+        public static GameState StartRebellion(GameState state)
+        {
+            if (GetRebellionTargets(state).Count == 0)
             {
                 return state;
             }
 
-            // Randomly select one city from the remaining deck
-            var selectedCity = deck[new Random().Next(deck.Count)];
-
-            // Update the current player's money by subtracting the cost
-            // and add the new property to the game state
-            state.Properties.Add(new Property(selectedCity, state.CurrentPlayerId));
-            state.Players[state.CurrentPlayerId] = state.Players[state.CurrentPlayerId] with
+            return state with
             {
-                Money = state.Players[state.CurrentPlayerId].Money - cost
+                TurnPhase = TurnPhase.RouteSelect
             };
-            return state;
         }
 
         /// <summary>
@@ -151,18 +188,19 @@ namespace GameplaySessionTracker.GameRules
             }
 
             state.Routes[state.Routes.FindIndex(route => route.CityPair == target)] = new Route(target, state.Routes.FirstOrDefault<Route>(route => route.CityPair == target)!.NumTracks - 1);
-            return state;
+            return state with
+            {
+                TurnPhase = TurnPhase.End
+            };
         }
 
-        /// <summary>
-        /// Returns a list of routes which have between 2 and 3 tracks
-        /// </summary>
-        /// <param name="state"></param>
-        /// <returns></returns>
-        public static List<CityPair> GetRebellionTargets(GameState state)
+        public static GameState BuyTrack(GameState state)
         {
-            return [.. state.Routes.Where(route => route.NumTracks > 1 && route.NumTracks < 4)
-            .Select(route => route.CityPair)];
+            state = PaySpaceCost(state);
+            return state with
+            {
+                TurnPhase = TurnPhase.RouteSelect
+            };
         }
 
         /// <summary>
@@ -172,7 +210,7 @@ namespace GameplaySessionTracker.GameRules
         /// <param name="state"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        public static GameState AddTrack(GameState state, CityPair target)
+        public static GameState PlaceTrack(GameState state, CityPair target)
         {
             // is this a valid target?
             if (!GameConstants.ValidCityPairs.Contains(target))
@@ -203,7 +241,7 @@ namespace GameplaySessionTracker.GameRules
             // if this was the first track laid, give the current player a new property
             if (firstTrack)
             {
-                state = BuyProperty(state, 0);
+                state = BuyProperty(state);
             }
 
             // if the route is now full, award players who own properties on the route
@@ -212,7 +250,135 @@ namespace GameplaySessionTracker.GameRules
                 state = FinishRoute(state, target);
             }
 
+            return state with
+            {
+                TurnPhase = TurnPhase.End
+            };
+        }
+
+        public static GameState EndOfTrack(GameState state)
+        {
+            state.Players[state.CurrentPlayerId] = state.Players[state.CurrentPlayerId] with
+            {
+                SkipNextTurn = true
+            };
+            return state with
+            {
+                TurnPhase = TurnPhase.End
+            };
+        }
+
+        public static GameState Pass(GameState state)
+        {
+            return state with
+            {
+                TurnPhase = TurnPhase.End
+            };
+        }
+
+        public static GameState EndTurn(GameState state)
+        {
+            var playerIds = state.Players.Keys.ToList();
+            var currentPlayerIndex = playerIds.FindIndex(p => p == state.CurrentPlayerId);
+            var nextPlayerId = playerIds[(currentPlayerIndex + 1) % playerIds.Count];
+
+            return state with
+            {
+                TurnPhase = TurnPhase.Start,
+                CurrentPlayerId = nextPlayerId
+            };
+        }
+
+        #endregion
+
+        #region Helpers
+
+        public static GameState PassGo(GameState state)
+        {
+            state.Players[state.CurrentPlayerId] = state.Players[state.CurrentPlayerId] with
+            {
+                Money = state.Players[state.CurrentPlayerId].Money + GameConstants.CPRSubsidy
+            };
             return state;
+        }
+
+        private static GameState DrawProperty(GameState state)
+        {
+            // Create a full deck of 5 of each city
+            var deck = new List<City>();
+            foreach (City city in Enum.GetValues<City>())
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    deck.Add(city);
+                }
+            }
+
+            // Remove properties already present in state.Properties
+            foreach (var property in state.Properties)
+            {
+                deck.Remove(property.City);
+            }
+
+            // If deck is empty, return state unchanged
+            if (deck.Count == 0)
+            {
+                return state;
+            }
+
+            // Randomly select one city from the remaining deck
+            // and add the new property to the game state
+            state.Properties.Add(new Property(deck[new Random().Next(deck.Count)], state.CurrentPlayerId));
+            return state;
+        }
+
+        private static int DiceRoll()
+        {
+            return new Random().Next(2, 13);
+        }
+
+        private static GameState PaySpaceCost(GameState state)
+        {
+            var currentPlayer = state.Players[state.CurrentPlayerId];
+            var currentSpace = GameConstants.Spaces[currentPlayer.BoardPosition];
+            if (currentSpace.Type != SpaceType.Track)
+                return state;
+            state.Players[state.CurrentPlayerId] = currentPlayer with
+            {
+                Money = currentPlayer.Money - currentSpace.Cost
+            };
+            return state;
+        }
+
+        /// <summary>
+        /// Returns a list of routes which have between 2 and 3 tracks
+        /// </summary>
+        /// <param name="state"></param>
+        /// <returns></returns>
+        public static List<CityPair> GetRebellionTargets(GameState state)
+        {
+            return [.. state.Routes.Where(route => route.NumTracks > 1 && route.NumTracks < 4)
+            .Select(route => route.CityPair)];
+        }
+
+        /// <summary>
+        /// Completes the game over state, 
+        /// setting IsGameOver to true and 
+        /// awarding the player who laid the final track of the game with the Last Spike bonus
+        /// </summary>
+        /// <param name="state"></param>
+        /// <returns></returns>
+        private static GameState ProcessGameOver(GameState state)
+        {
+            // the player that finishes the game gets bonus
+            state.Players[state.CurrentPlayerId] = state.Players[state.CurrentPlayerId] with
+            {
+                Money = state.Players[state.CurrentPlayerId].Money + GameConstants.LastSpikeBonus
+            };
+            return state with
+            {
+                IsGameOver = true
+            };
         }
 
         /// <summary>
@@ -221,7 +387,7 @@ namespace GameplaySessionTracker.GameRules
         /// <param name="state"></param>
         /// <param name="finished"></param>
         /// <returns></returns>
-        public static GameState FinishRoute(GameState state, CityPair finished)
+        private static GameState FinishRoute(GameState state, CityPair finished)
         {
             var num_owned = new Dictionary<Guid, Dictionary<City, int>>();
             var awards = new Dictionary<Guid, int>();
@@ -270,7 +436,29 @@ namespace GameplaySessionTracker.GameRules
             return state;
         }
 
-        public static bool IsGameOver(GameState state)
+        public static List<ActionType> GetValidActions(GameState state)
+        {
+            var landedOn = GameConstants.Spaces[state.Players[state.CurrentPlayerId].BoardPosition];
+            return landedOn.Type switch
+            {
+                SpaceType.Land => new List<ActionType> { ActionType.Accept, ActionType.Pass, ActionType.Trade },
+                SpaceType.Track when state.TurnPhase == TurnPhase.SpaceOption => new List<ActionType> { ActionType.Accept, ActionType.Trade, ActionType.PlaceTrack },
+                SpaceType.Track when state.TurnPhase == TurnPhase.RouteSelect => new List<ActionType> { ActionType.PlaceTrack },
+                SpaceType.Rebellion when state.TurnPhase == TurnPhase.SpaceOption => new List<ActionType> { ActionType.Accept },
+                SpaceType.Rebellion when state.TurnPhase == TurnPhase.RouteSelect => new List<ActionType> { ActionType.Rebellion },
+                SpaceType.SettlerRents => new List<ActionType> { ActionType.Accept },
+                SpaceType.LandClaims => new List<ActionType> { ActionType.Accept },
+                SpaceType.SurveyFees => new List<ActionType> { ActionType.Accept },
+                SpaceType.EndOfTrack => new List<ActionType> { ActionType.Accept },
+                SpaceType.RoadbedCosts => new List<ActionType> { ActionType.Accept },
+                SpaceType.Go => new List<ActionType> { ActionType.Accept },
+                _ => throw new ArgumentException("Invalid space type")
+            };
+
+
+        }
+
+        private static bool IsGameOver(GameState state)
         {
             // Get all completed routes (routes with 4 tracks)
             var completedRoutes = state.Routes.Where(route => route.NumTracks == 4).ToList();
@@ -322,79 +510,6 @@ namespace GameplaySessionTracker.GameRules
             return false;
         }
 
-        /// <summary>
-        /// Completes the game over state, 
-        /// setting IsGameOver to true and 
-        /// awarding the player who laid the final track of the game with the Last Spike bonus
-        /// </summary>
-        /// <param name="state"></param>
-        /// <returns></returns>
-        public static GameState ProcessGameOver(GameState state)
-        {
-            // the player that finishes the game gets bonus
-            state.Players[state.CurrentPlayerId] = state.Players[state.CurrentPlayerId] with
-            {
-                Money = state.Players[state.CurrentPlayerId].Money + GameConstants.LastSpikeBonus
-            };
-            return state with
-            {
-                IsGameOver = true
-            };
-        }
-
-        // based on the current player's position, determine what happens
-        public static GameState LandOnSpace(GameState state)
-        {
-            var currentPlayer = state.Players[state.CurrentPlayerId];
-            if (currentPlayer.BoardPosition > GameConstants.Spaces.Count - 1)
-                return state;
-            var landedOnType = GameConstants.Spaces[currentPlayer.BoardPosition].Type;
-
-            return landedOnType switch
-            {
-                // "roll", "yes buy", "no buy" / A 
-                // requires explicit player action
-                SpaceType.Land => state,
-                SpaceType.Track => state,
-                SpaceType.Rebellion => state,
-                // doesn't require player action, but could wait for player to continue
-                SpaceType.SettlerRents => state,
-                SpaceType.LandClaims => state,
-                SpaceType.SurveyFees => state,
-                // doesn't require player action
-                SpaceType.EndOfTrack => state,
-                SpaceType.Go => PassGo(state),
-                _ => state
-            };
-        }
-
-        public static GameState EndOfTrack(GameState state)
-        {
-            state.Players[state.CurrentPlayerId] = state.Players[state.CurrentPlayerId] with
-            {
-                SkipNextTurn = true
-            };
-            return state;
-        }
-
-        public static List<GameAction> GetValidActions(GameState state, Guid playerId)
-        {
-            if (state.CurrentPlayerId != playerId)
-                return new List<GameAction>();
-
-            return new List<GameAction>
-            {
-                new GameAction { Name = ActionType.Roll, PlayerId = playerId },
-                new GameAction { Name = ActionType.Accept, PlayerId = playerId },
-                new GameAction { Name = ActionType.Pass, PlayerId = playerId }
-            };
-        }
-
-        private static int DiceRoll()
-        {
-            return new Random().Next(2, 13);
-        }
-
         public static string SerializeGameState(GameState state)
         {
             return JsonSerializer.Serialize(state);
@@ -405,4 +520,5 @@ namespace GameplaySessionTracker.GameRules
             return JsonSerializer.Deserialize<GameState>(json);
         }
     }
+    #endregion
 }

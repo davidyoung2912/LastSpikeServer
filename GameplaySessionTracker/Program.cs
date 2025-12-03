@@ -2,8 +2,13 @@ using GameplaySessionTracker.Services;
 using GameplaySessionTracker.Hubs;
 using GameplaySessionTracker.Repositories;
 using GameplaySessionTracker.GameRules;
+// using GameplaySessionTracker.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Bind configuration to strongly-typed settings
+// var appSettings = new AppSettings();
+// builder.Configuration.Bind(appSettings);
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -11,7 +16,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 
-// Add CORS for SignalR
+// Add CORS - environment-aware configuration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -55,8 +60,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
-
-app.UseCors("AllowAll");
 
 app.UseAuthorization();
 

@@ -2,6 +2,14 @@ using System.Collections.Generic;
 
 namespace GameplaySessionTracker.GameRules
 {
+    public enum TurnPhase
+    {
+        Start,
+        SpaceOption,
+        RouteSelect,
+        End
+    }
+
     public enum SpaceType
     {
         Go,

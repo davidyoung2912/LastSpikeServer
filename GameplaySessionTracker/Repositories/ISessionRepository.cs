@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using GameplaySessionTracker.Models;
 
 namespace GameplaySessionTracker.Repositories
 {
     public interface ISessionRepository
     {
-        IEnumerable<SessionData> GetAll();
-        SessionData? GetById(Guid id);
-        void Add(SessionData session);
-        void Update(SessionData session);
-        void Delete(Guid id);
+        Task<IEnumerable<SessionData>> GetAll();
+        Task<SessionData?> GetById(Guid id);
+        Task Add(SessionData session);
+        Task Update(SessionData session);
+        Task Delete(Guid id);
     }
 }

@@ -14,32 +14,13 @@ public class SessionGameBoardsControllerTests
 {
     private readonly Mock<ISessionGameBoardService> _mockService;
     private readonly Mock<ISessionService> _mockSessionService;
-
-    private readonly Mock<IHubContext<GameHub>> _mockHubContext;
     private readonly SessionGameBoardsController _controller;
 
     public SessionGameBoardsControllerTests()
     {
         _mockService = new Mock<ISessionGameBoardService>();
         _mockSessionService = new Mock<ISessionService>();
-
-        _mockHubContext = new Mock<IHubContext<GameHub>>();
-
-        var mockClients = new Mock<IHubClients>();
-        var mockClientProxy = new Mock<IClientProxy>();
-
-        /*
-        mockClientProxy.Setup(p => p.SendCoreAsync(
-            It.IsAny<string>(),
-            It.IsAny<object[]>(),
-            It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        */
-
-        mockClients.Setup(c => c.All).Returns(mockClientProxy.Object);
-        _mockHubContext.Setup(c => c.Clients).Returns(mockClients.Object);
-
-        _controller = new SessionGameBoardsController(_mockService.Object, _mockSessionService.Object, _mockHubContext.Object);
+        _controller = new SessionGameBoardsController(_mockService.Object, _mockSessionService.Object);
     }
 
     [Fact]
@@ -71,7 +52,7 @@ public class SessionGameBoardsControllerTests
     public async Task Create_InvalidSessionId_ReturnsBadRequest()
     {
         var sgb = new SessionGameBoard { SessionId = Guid.NewGuid() };
-        _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).Returns((SessionData?)null);
+        _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).ReturnsAsync((SessionData?)null);
         var result = await _controller.Create(sgb);
         Assert.IsType<BadRequestObjectResult>(result.Result);
     }
@@ -82,7 +63,7 @@ public class SessionGameBoardsControllerTests
     public async Task Create_Valid_ReturnsCreated()
     {
         var sgb = new SessionGameBoard { SessionId = Guid.NewGuid() };
-        _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).Returns(new SessionData { Id = sgb.SessionId });
+        _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).ReturnsAsync(new SessionData { Id = sgb.SessionId });
         _mockService.Setup(s => s.Create(It.IsAny<SessionGameBoard>())).Returns(Task.FromResult(new SessionGameBoard { Id = Guid.NewGuid() }));
         var result = await _controller.Create(sgb);
         Assert.IsType<CreatedAtActionResult>(result.Result);
@@ -94,7 +75,7 @@ public class SessionGameBoardsControllerTests
         var id = Guid.NewGuid();
         var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid() };
         _mockService.Setup(s => s.GetById(id)).Returns(Task.FromResult<SessionGameBoard?>(sgb));
-        _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).Returns(new SessionData { Id = sgb.SessionId });
+        _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).ReturnsAsync(new SessionData { Id = sgb.SessionId });
         var result = await _controller.Update(id, sgb);
         Assert.IsType<NoContentResult>(result);
     }
@@ -124,7 +105,7 @@ public class SessionGameBoardsControllerTests
         var id = Guid.NewGuid();
         var sgb = new SessionGameBoard { Id = id, SessionId = Guid.NewGuid() };
         _mockService.Setup(s => s.GetById(id)).Returns(Task.FromResult<SessionGameBoard?>(sgb));
-        _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).Returns((SessionData?)null);
+        _mockSessionService.Setup(s => s.GetById(sgb.SessionId)).ReturnsAsync((SessionData?)null);
         var result = await _controller.Update(id, sgb);
         Assert.IsType<BadRequestObjectResult>(result);
     }

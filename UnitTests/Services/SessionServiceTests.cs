@@ -2,6 +2,7 @@ using GameplaySessionTracker.Models;
 using GameplaySessionTracker.Repositories;
 using GameplaySessionTracker.Services;
 using Moq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace GameplaySessionTracker.Tests.Services;
@@ -18,7 +19,7 @@ public class SessionServiceTests
     }
 
     [Fact]
-    public void GetAll_ReturnsAllSessions()
+    public async Task GetAll_ReturnsAllSessions()
     {
         // Arrange
         var sessions = new List<SessionData>
@@ -26,10 +27,10 @@ public class SessionServiceTests
             new SessionData { Id = Guid.NewGuid(), Description = "Session1", BoardId = Guid.NewGuid() },
             new SessionData { Id = Guid.NewGuid(), Description = "Session2", BoardId = Guid.NewGuid() }
         };
-        _mockRepository.Setup(r => r.GetAll()).Returns(sessions);
+        _mockRepository.Setup(r => r.GetAll()).ReturnsAsync(sessions);
 
         // Act
-        var result = _service.GetAll();
+        var result = await _service.GetAll();
 
         // Assert
         Assert.Equal(2, result.Count());
@@ -37,15 +38,15 @@ public class SessionServiceTests
     }
 
     [Fact]
-    public void GetById_ExistingId_ReturnsSession()
+    public async Task GetById_ExistingId_ReturnsSession()
     {
         // Arrange
         var sessionId = Guid.NewGuid();
         var session = new SessionData { Id = sessionId, Description = "Test", BoardId = Guid.NewGuid() };
-        _mockRepository.Setup(r => r.GetById(sessionId)).Returns(session);
+        _mockRepository.Setup(r => r.GetById(sessionId)).ReturnsAsync(session);
 
         // Act
-        var result = _service.GetById(sessionId);
+        var result = await _service.GetById(sessionId);
 
         // Assert
         Assert.NotNull(result);
@@ -54,14 +55,14 @@ public class SessionServiceTests
     }
 
     [Fact]
-    public void GetById_NonExistentId_ReturnsNull()
+    public async Task GetById_NonExistentId_ReturnsNull()
     {
         // Arrange
         var sessionId = Guid.NewGuid();
-        _mockRepository.Setup(r => r.GetById(sessionId)).Returns((SessionData?)null);
+        _mockRepository.Setup(r => r.GetById(sessionId)).ReturnsAsync((SessionData?)null);
 
         // Act
-        var result = _service.GetById(sessionId);
+        var result = await _service.GetById(sessionId);
 
         // Assert
         Assert.Null(result);
@@ -69,13 +70,13 @@ public class SessionServiceTests
     }
 
     [Fact]
-    public void Create_ValidSession_CallsRepositoryAdd()
+    public async Task Create_ValidSession_CallsRepositoryAdd()
     {
         // Arrange
         var session = new SessionData { Id = Guid.NewGuid(), Description = "New", BoardId = Guid.NewGuid() };
 
         // Act
-        var result = _service.Create(session);
+        var result = await _service.Create(session);
 
         // Assert
         Assert.Equal(session, result);
@@ -83,28 +84,28 @@ public class SessionServiceTests
     }
 
     [Fact]
-    public void Update_ValidSession_CallsRepositoryUpdate()
+    public async Task Update_ValidSession_CallsRepositoryUpdate()
     {
         // Arrange
         var sessionId = Guid.NewGuid();
         var session = new SessionData { Id = sessionId, Description = "Updated", BoardId = Guid.NewGuid() };
-        _mockRepository.Setup(r => r.GetById(sessionId)).Returns(session);
+        _mockRepository.Setup(r => r.GetById(sessionId)).ReturnsAsync(session);
 
         // Act
-        _service.Update(sessionId, session);
+        await _service.Update(sessionId, session);
 
         // Assert
         _mockRepository.Verify(r => r.Update(session), Times.Once);
     }
 
     [Fact]
-    public void Delete_ValidId_CallsRepositoryDelete()
+    public async Task Delete_ValidId_CallsRepositoryDelete()
     {
         // Arrange
         var sessionId = Guid.NewGuid();
 
         // Act
-        _service.Delete(sessionId);
+        await _service.Delete(sessionId);
 
         // Assert
         _mockRepository.Verify(r => r.Delete(sessionId), Times.Once);

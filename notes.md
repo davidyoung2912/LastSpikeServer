@@ -16,4 +16,9 @@ create a new session:
     client gets url with session id to share
     server posts gameboard
     
-    
+
+turn phases:
+    start - move, trade
+    confirm space landed on - accept, pass, trade 
+        if track or rebellion, addtrack, rebellion
+    end

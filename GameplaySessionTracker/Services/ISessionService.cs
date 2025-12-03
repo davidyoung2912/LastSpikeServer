@@ -6,10 +6,10 @@ namespace GameplaySessionTracker.Services
 {
     public interface ISessionService
     {
-        IEnumerable<SessionData> GetAll();
-        SessionData? GetById(Guid id);
-        SessionData Create(SessionData session);
-        void Update(Guid id, SessionData session);
-        void Delete(Guid id);
+        Task<IEnumerable<SessionData>> GetAll();
+        Task<SessionData?> GetById(Guid id);
+        Task<SessionData> Create(SessionData session);
+        Task Update(Guid id, SessionData session);
+        Task Delete(Guid id);
     }
 }

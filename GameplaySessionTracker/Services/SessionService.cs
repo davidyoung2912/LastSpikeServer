@@ -7,30 +7,30 @@ namespace GameplaySessionTracker.Services
 {
     public class SessionService(ISessionRepository repository) : ISessionService
     {
-        public IEnumerable<SessionData> GetAll()
+        public async Task<IEnumerable<SessionData>> GetAll()
         {
-            return repository.GetAll();
+            return await repository.GetAll();
         }
 
-        public SessionData? GetById(Guid id)
+        public async Task<SessionData?> GetById(Guid id)
         {
-            return repository.GetById(id);
+            return await repository.GetById(id);
         }
 
-        public SessionData Create(SessionData session)
+        public async Task<SessionData> Create(SessionData session)
         {
-            repository.Add(session);
+            await repository.Add(session);
             return session;
         }
 
-        public void Update(Guid id, SessionData session)
+        public async Task Update(Guid id, SessionData session)
         {
-            repository.Update(session);
+            await repository.Update(session);
         }
 
-        public void Delete(Guid id)
+        public async Task Delete(Guid id)
         {
-            repository.Delete(id);
+            await repository.Delete(id);
         }
     }
 }
