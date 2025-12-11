@@ -1,17 +1,40 @@
 using GameplaySessionTracker.Models;
 using GameplaySessionTracker.Repositories;
 using GameplaySessionTracker.Services;
+using GameplaySessionTracker.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Moq;
 using Xunit;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+using System;
 
 namespace GameplaySessionTracker.Tests.Services;
 
-public class SessionGameBoardServiceTests(
-        GameBoardService service,
-        Mock<IGameBoardRepository> mockRepository)
+public class SessionGameBoardServiceTests
 {
+    private readonly Mock<IGameBoardRepository> _mockRepository;
+    private readonly Mock<IHubContext<GameHub>> _mockHubContext;
+    private readonly Mock<IHubClients> _mockClients;
+    private readonly Mock<IClientProxy> _mockClientProxy;
+    private readonly GameBoardService _service;
+
+    public SessionGameBoardServiceTests()
+    {
+        _mockRepository = new Mock<IGameBoardRepository>();
+        _mockHubContext = new Mock<IHubContext<GameHub>>();
+        _mockClients = new Mock<IHubClients>();
+        _mockClientProxy = new Mock<IClientProxy>();
+
+        _mockHubContext.Setup(h => h.Clients).Returns(_mockClients.Object);
+        _mockClients.Setup(c => c.Group(It.IsAny<string>())).Returns(_mockClientProxy.Object);
+
+        _service = new GameBoardService(_mockRepository.Object, _mockHubContext.Object);
+    }
+
     [Fact]
-    public void GetAll_ReturnsAllSessionGameBoards()
+    public async Task GetAll_ReturnsAllSessionGameBoards()
     {
         // Arrange
         var sessionGameBoards = new List<GameBoard>
@@ -19,87 +42,89 @@ public class SessionGameBoardServiceTests(
             new GameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Data = "Data1" },
             new GameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Data = "Data2" }
         };
-        mockRepository.Setup(r => r.GetAll()).Returns(sessionGameBoards);
+        _mockRepository.Setup(r => r.GetAll()).Returns(sessionGameBoards);
 
         // Act
-        var result = service.GetAll().Result;
+        var result = await _service.GetAll();
 
         // Assert
         Assert.Equal(2, result.Count());
-        mockRepository.Verify(r => r.GetAll(), Times.Once);
+        _mockRepository.Verify(r => r.GetAll(), Times.Once);
     }
 
     [Fact]
-    public void GetById_ExistingId_ReturnsSessionGameBoard()
+    public async Task GetById_ExistingId_ReturnsSessionGameBoard()
     {
         // Arrange
         var id = Guid.NewGuid();
         var sgb = new GameBoard { Id = id, SessionId = Guid.NewGuid(), Data = "Test" };
-        mockRepository.Setup(r => r.GetById(id)).Returns(sgb);
+        _mockRepository.Setup(r => r.GetById(id)).Returns(sgb);
 
         // Act
-        var result = service.GetById(id).Result;
+        var result = await _service.GetById(id);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal(id, result.Id);
-        mockRepository.Verify(r => r.GetById(id), Times.Once);
+        _mockRepository.Verify(r => r.GetById(id), Times.Once);
     }
 
     [Fact]
-    public void GetById_NonExistentId_ReturnsNull()
+    public async Task GetById_NonExistentId_ReturnsNull()
     {
         // Arrange
         var id = Guid.NewGuid();
-        mockRepository.Setup(r => r.GetById(id)).Returns((GameBoard?)null);
+        _mockRepository.Setup(r => r.GetById(id)).Returns((GameBoard?)null);
 
         // Act
-        var result = service.GetById(id);
+        var result = await _service.GetById(id);
 
         // Assert
         Assert.Null(result);
-        mockRepository.Verify(r => r.GetById(id), Times.Once);
+        _mockRepository.Verify(r => r.GetById(id), Times.Once);
     }
 
     [Fact]
-    public void Create_ValidSessionGameBoard_CallsRepositoryAdd()
+    public async Task Create_ValidSessionGameBoard_CallsRepositoryAdd()
     {
         // Arrange
         var sgb = new GameBoard { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), Data = "New" };
 
         // Act
-        var result = service.Create(sgb).Result;
+        var result = await _service.Create(sgb);
 
         // Assert
         Assert.Equal(sgb, result);
-        mockRepository.Verify(r => r.Add(sgb), Times.Once);
+        _mockRepository.Verify(r => r.Add(sgb), Times.Once);
     }
 
     [Fact]
-    public void Update_ValidSessionGameBoard_CallsRepositoryUpdate()
+    public async Task Update_ValidSessionGameBoard_CallsRepositoryUpdateAndNotifies()
     {
         // Arrange
         var id = Guid.NewGuid();
         var sgb = new GameBoard { Id = id, SessionId = Guid.NewGuid(), Data = "Updated" };
-        mockRepository.Setup(r => r.GetById(id)).Returns(sgb);
+        _mockRepository.Setup(r => r.GetById(id)).Returns(sgb);
 
         // Act
-        service.Update(id, sgb);
+        await _service.Update(id, sgb);
 
         // Assert
-        mockRepository.Verify(r => r.Update(sgb), Times.Once);
+        _mockRepository.Verify(r => r.Update(sgb), Times.Once);
+        _mockClients.Verify(c => c.Group(sgb.SessionId.ToString()), Times.Once);
+        _mockClientProxy.Verify(c => c.SendCoreAsync("GameBoardUpdated", It.IsAny<object[]>(), default), Times.Once);
     }
 
     [Fact]
-    public void Delete_ValidId_CallsRepositoryDelete()
+    public async Task Delete_ValidId_CallsRepositoryDelete()
     {
         // Arrange
         var id = Guid.NewGuid();
 
         // Act
-        service.Delete(id);
+        await _service.Delete(id);
 
         // Assert
-        mockRepository.Verify(r => r.Delete(id), Times.Once);
+        _mockRepository.Verify(r => r.Delete(id), Times.Once);
     }
 }

@@ -20,7 +20,8 @@ namespace GameplaySessionTracker.GameRules
         Rebellion,
         EndOfTrack,
         LandClaims,
-        SurveyFees
+        SurveyFees,
+        Scandal
     }
 
     public enum City
@@ -62,6 +63,7 @@ namespace GameplaySessionTracker.GameRules
             new Space(SpaceType.SurveyFees, 3000),
             new Space(SpaceType.Track, 8000),
             new Space(SpaceType.Land, 9000),
+            new Space(SpaceType.Scandal, 10000),
             new Space(SpaceType.Track, 10000),
             new Space(SpaceType.Land, 12000)
         };
@@ -79,20 +81,20 @@ namespace GameplaySessionTracker.GameRules
             [City.Winnipeg] = new List<int> { 0, 4000, 10000, 18000, 28000, 40000 }
         };
 
-        public static readonly List<CityPair> ValidCityPairs = new()
-        {
+        public static readonly List<CityPair> ValidCityPairs =
+        [
             new CityPair(City.Montreal, City.Toronto),
             new CityPair(City.Montreal, City.Sudbury),
-            new CityPair(City.Toronto, City.Sudbury),
+            new CityPair(City.Toronto, City.Winnipeg),
+            new CityPair(City.Toronto, City.Regina),
+            new CityPair(City.Sudbury, City.Saskatoon),
             new CityPair(City.Sudbury, City.Winnipeg),
-            new CityPair(City.Winnipeg, City.Regina),
-            new CityPair(City.Winnipeg, City.Saskatoon),
+            new CityPair(City.Winnipeg, City.Calgary),
             new CityPair(City.Winnipeg, City.Edmonton),
-            new CityPair(City.Regina, City.Saskatoon),
             new CityPair(City.Regina, City.Calgary),
             new CityPair(City.Saskatoon, City.Edmonton),
             new CityPair(City.Calgary, City.Vancouver),
             new CityPair(City.Edmonton, City.Vancouver)
-        };
+        ];
     }
 }

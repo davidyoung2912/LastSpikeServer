@@ -12,5 +12,6 @@ namespace GameplaySessionTracker.Repositories
         Task Add(SessionData session);
         Task Update(SessionData session);
         Task Delete(Guid id);
+        Task<IEnumerable<Player>> GetSessionPlayers(Guid sessionId);
     }
 }

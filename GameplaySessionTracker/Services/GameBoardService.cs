@@ -37,6 +37,8 @@ namespace GameplaySessionTracker.Services
             var gameBoard = await GetById(id) ?? throw new ArgumentException("Session game board not found");
             var state = CreateNewGameState(playerIds);
 
+            gameBoard.Data = SerializeGameState(state);
+            await Update(id, gameBoard);
             await DoTurn(id, gameBoard, state);
         }
 
@@ -63,7 +65,7 @@ namespace GameplaySessionTracker.Services
 
             // Notify all players about the new state
             await hubContext.Clients.Group(gameBoard.SessionId.ToString()).
-                SendAsync("SessionGameBoardUpdated");
+                SendAsync("GameBoardUpdated");
         }
 
         public async Task Delete(Guid id)

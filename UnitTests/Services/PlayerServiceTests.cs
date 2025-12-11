@@ -23,8 +23,8 @@ public class PlayerServiceTests
         // Arrange
         var players = new List<Player>
         {
-            new Player { Id = Guid.NewGuid(), Name = "Player1", Alias = "P1" },
-            new Player { Id = Guid.NewGuid(), Name = "Player2", Alias = "P2" }
+            new Player { Id = Guid.NewGuid(), Name = "Player1" },
+            new Player { Id = Guid.NewGuid(), Name = "Player2" }
         };
         _mockRepository.Setup(r => r.GetAll()).Returns(players);
 
@@ -41,7 +41,7 @@ public class PlayerServiceTests
     {
         // Arrange
         var playerId = Guid.NewGuid();
-        var player = new Player { Id = playerId, Name = "Test", Alias = "T" };
+        var player = new Player { Id = playerId, Name = "Test" };
         _mockRepository.Setup(r => r.GetById(playerId)).Returns(player);
 
         // Act
@@ -72,7 +72,7 @@ public class PlayerServiceTests
     public void Create_ValidPlayer_CallsRepositoryAdd()
     {
         // Arrange
-        var player = new Player { Id = Guid.NewGuid(), Name = "New Player", Alias = "NP" };
+        var player = new Player { Id = Guid.NewGuid(), Name = "New Player" };
 
         // Act
         var result = _service.Create(player);
@@ -87,7 +87,7 @@ public class PlayerServiceTests
     {
         // Arrange
         var playerId = Guid.NewGuid();
-        var player = new Player { Id = playerId, Name = "Updated", Alias = "U" };
+        var player = new Player { Id = playerId, Name = "Updated" };
         _mockRepository.Setup(r => r.GetById(playerId)).Returns(player);
 
         // Act

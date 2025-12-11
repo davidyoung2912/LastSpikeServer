@@ -1,5 +1,9 @@
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using GameplaySessionTracker.Hubs;
+using GameplaySessionTracker.Models;
+using GameplaySessionTracker.Services;
 using Microsoft.AspNetCore.SignalR;
 using Moq;
 using Xunit;
@@ -10,14 +14,16 @@ public class GameHubTests
 {
     private readonly Mock<HubCallerContext> _mockContext;
     private readonly Mock<IGroupManager> _mockGroups;
+    private readonly Mock<ISessionService> _mockSessionService;
     private readonly GameHub _hub;
 
     public GameHubTests()
     {
         _mockContext = new Mock<HubCallerContext>();
         _mockGroups = new Mock<IGroupManager>();
+        _mockSessionService = new Mock<ISessionService>();
 
-        _hub = new GameHub
+        _hub = new GameHub(_mockSessionService.Object)
         {
             Context = _mockContext.Object,
             Groups = _mockGroups.Object
@@ -33,7 +39,6 @@ public class GameHubTests
         await _hub.OnConnectedAsync();
 
         // Assert
-        // Verify that the method completes without throwing exceptions
         Assert.True(true);
     }
 
@@ -44,45 +49,60 @@ public class GameHubTests
         await _hub.OnDisconnectedAsync(null);
 
         // Assert
-        // Verify that the method completes without throwing exceptions
         Assert.True(true);
     }
 
     [Fact]
-    public async Task OnDisconnectedAsync_WithException_CompletesSuccessfully()
+    public async Task JoinSession_ValidSessionAndPlayer_AddsToGroup()
     {
         // Arrange
-        var exception = new Exception("Test exception");
+        var sessionId = Guid.NewGuid();
+        var playerId = Guid.NewGuid();
+        var session = new SessionData { Id = sessionId, PlayerIds = new List<Guid> { playerId } };
 
-        // Act
-        await _hub.OnDisconnectedAsync(exception);
+        _mockSessionService.Setup(s => s.GetById(sessionId)).ReturnsAsync(session);
 
-        // Assert
-        // Verify that the method completes without throwing exceptions
-        Assert.True(true);
-    }
-
-    [Fact]
-    public async Task JoinSession_AddsToGroup()
-    {
-        // Arrange
-        var sessionId = "test-session-123";
-        var expectedGroupName = $"session_{sessionId}";
-
-        _mockGroups.Setup(g => g.AddToGroupAsync(
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            default))
+        _mockGroups.Setup(g => g.AddToGroupAsync(It.IsAny<string>(), It.IsAny<string>(), default))
             .Returns(Task.CompletedTask);
 
         // Act
-        await _hub.JoinSession(sessionId);
+        await _hub.JoinSession(sessionId.ToString(), playerId.ToString());
 
         // Assert
-        _mockGroups.Verify(g => g.AddToGroupAsync(
-            "test-connection-id",
-            expectedGroupName,
-            default), Times.Once);
+        _mockGroups.Verify(g => g.AddToGroupAsync("test-connection-id", sessionId.ToString(), default), Times.Once);
+    }
+
+    [Fact]
+    public async Task JoinSession_InvalidSession_DoesNotAddToGroup()
+    {
+        // Arrange
+        var sessionId = Guid.NewGuid();
+        var playerId = Guid.NewGuid();
+
+        _mockSessionService.Setup(s => s.GetById(sessionId)).ReturnsAsync((SessionData?)null);
+
+        // Act
+        await _hub.JoinSession(sessionId.ToString(), playerId.ToString());
+
+        // Assert
+        _mockGroups.Verify(g => g.AddToGroupAsync(It.IsAny<string>(), It.IsAny<string>(), default), Times.Never);
+    }
+
+    [Fact]
+    public async Task JoinSession_PlayerNotInSession_DoesNotAddToGroup()
+    {
+        // Arrange
+        var sessionId = Guid.NewGuid();
+        var playerId = Guid.NewGuid();
+        var session = new SessionData { Id = sessionId, PlayerIds = new List<Guid>() }; // Player not in list
+
+        _mockSessionService.Setup(s => s.GetById(sessionId)).ReturnsAsync(session);
+
+        // Act
+        await _hub.JoinSession(sessionId.ToString(), playerId.ToString());
+
+        // Assert
+        _mockGroups.Verify(g => g.AddToGroupAsync(It.IsAny<string>(), It.IsAny<string>(), default), Times.Never);
     }
 
     [Fact]
@@ -90,21 +110,14 @@ public class GameHubTests
     {
         // Arrange
         var sessionId = "test-session-123";
-        var expectedGroupName = $"session_{sessionId}";
 
-        _mockGroups.Setup(g => g.RemoveFromGroupAsync(
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            default))
+        _mockGroups.Setup(g => g.RemoveFromGroupAsync(It.IsAny<string>(), It.IsAny<string>(), default))
             .Returns(Task.CompletedTask);
 
         // Act
         await _hub.LeaveSession(sessionId);
 
         // Assert
-        _mockGroups.Verify(g => g.RemoveFromGroupAsync(
-            "test-connection-id",
-            expectedGroupName,
-            default), Times.Once);
+        _mockGroups.Verify(g => g.RemoveFromGroupAsync("test-connection-id", sessionId, default), Times.Once);
     }
 }

@@ -11,7 +11,7 @@ public class SessionDataTests
     public void SessionData_DefaultConstructor_InitializesProperties()
     {
         // Arrange & Act
-        var session = new SessionData();
+        var session = new SessionData { PlayerIds = new List<Guid>() };
 
         // Assert
         Assert.Equal(Guid.Empty, session.Id);
@@ -27,7 +27,7 @@ public class SessionDataTests
     public void SessionData_SetProperties_ReturnsCorrectValues()
     {
         // Arrange
-        var session = new SessionData();
+        var session = new SessionData { PlayerIds = new List<Guid>() };
         var id = Guid.NewGuid();
         var description = "Test Session";
         var boardId = Guid.NewGuid();

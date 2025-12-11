@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace GameplaySessionTracker.Hubs
 {
-    public class GameHub : Hub
+    public class GameHub(Services.ISessionService sessionService) : Hub
     {
         public override async Task OnConnectedAsync()
         {
@@ -16,10 +16,19 @@ namespace GameplaySessionTracker.Hubs
             Console.WriteLine($"Client disconnected: {Context.ConnectionId}");
         }
 
-        public async Task JoinSession(string sessionId)
+        public async Task JoinSession(string sessionId, string playerId)
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, sessionId);
-            Console.WriteLine($"Client {Context.ConnectionId} joined session {sessionId}");
+            if (!Guid.TryParse(sessionId, out var sessionIdGuid) || !Guid.TryParse(playerId, out var playerIdGuid))
+            {
+                return;
+            }
+
+            var session = await sessionService.GetById(sessionIdGuid);
+            if (session != null && session.PlayerIds.Contains(playerIdGuid))
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, sessionId);
+                Console.WriteLine($"Client {Context.ConnectionId} joined session {sessionId}");
+            }
         }
 
         public async Task LeaveSession(string sessionId)

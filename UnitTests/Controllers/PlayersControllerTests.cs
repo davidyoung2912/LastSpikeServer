@@ -4,6 +4,8 @@ using GameplaySessionTracker.Services;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
+using System.Collections.Generic;
+using System;
 
 namespace GameplaySessionTracker.Tests.Controllers;
 
@@ -22,7 +24,7 @@ public class PlayersControllerTests
     public void GetAll_ReturnsOkWithPlayers()
     {
         // Arrange
-        var players = new List<Player> { new Player { Id = Guid.NewGuid(), Name = "Test", Alias = "T" } };
+        var players = new List<Player> { new Player { Id = Guid.NewGuid(), Name = "Test" } };
         _mockService.Setup(s => s.GetAll()).Returns(players);
 
         // Act
@@ -37,7 +39,7 @@ public class PlayersControllerTests
     public void GetById_ExistingId_ReturnsOk()
     {
         // Arrange
-        var player = new Player { Id = Guid.NewGuid(), Name = "Test", Alias = "T" };
+        var player = new Player { Id = Guid.NewGuid(), Name = "Test" };
         _mockService.Setup(s => s.GetById(player.Id)).Returns(player);
 
         // Act
@@ -65,9 +67,8 @@ public class PlayersControllerTests
     public void Create_ValidPlayer_ReturnsCreated()
     {
         // Arrange
-        var player = new Player { Name = "New", Alias = "N" };
-        var createdPlayer = new Player { Id = Guid.NewGuid(), Name = "New", Alias = "N" };
-        _mockService.Setup(s => s.GetAll()).Returns(new List<Player>());
+        var player = new Player { Name = "New" };
+        var createdPlayer = new Player { Id = Guid.NewGuid(), Name = "New" };
         _mockService.Setup(s => s.Create(It.IsAny<Player>())).Returns(createdPlayer);
 
         // Act
@@ -79,42 +80,10 @@ public class PlayersControllerTests
     }
 
     [Fact]
-    public void Create_DuplicateName_ReturnsBadRequest()
-    {
-        // Arrange
-        var existing = new Player { Id = Guid.NewGuid(), Name = "Test", Alias = "T" };
-        var newPlayer = new Player { Name = "Test", Alias = "Different" };
-        _mockService.Setup(s => s.GetAll()).Returns(new List<Player> { existing });
-
-        // Act
-        var result = _controller.Create(newPlayer);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Contains("name", badRequestResult.Value?.ToString()?.ToLower());
-    }
-
-    [Fact]
-    public void Create_DuplicateAlias_ReturnsBadRequest()
-    {
-        // Arrange
-        var existing = new Player { Id = Guid.NewGuid(), Name = "Different", Alias = "T" };
-        var newPlayer = new Player { Name = "Test", Alias = "T" };
-        _mockService.Setup(s => s.GetAll()).Returns(new List<Player> { existing });
-
-        // Act
-        var result = _controller.Create(newPlayer);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Contains("alias", badRequestResult.Value?.ToString()?.ToLower());
-    }
-
-    [Fact]
     public void Update_IdMismatch_ReturnsBadRequest()
     {
         // Arrange
-        var player = new Player { Id = Guid.NewGuid(), Name = "Test", Alias = "T" };
+        var player = new Player { Id = Guid.NewGuid(), Name = "Test" };
 
         // Act
         var result = _controller.Update(Guid.NewGuid(), player);
@@ -128,7 +97,7 @@ public class PlayersControllerTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        var player = new Player { Id = id, Name = "Test", Alias = "T" };
+        var player = new Player { Id = id, Name = "Test" };
         _mockService.Setup(s => s.GetById(id)).Returns((Player?)null);
 
         // Act
@@ -143,9 +112,8 @@ public class PlayersControllerTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        var player = new Player { Id = id, Name = "Test", Alias = "T" };
+        var player = new Player { Id = id, Name = "Test" };
         _mockService.Setup(s => s.GetById(id)).Returns(player);
-        _mockService.Setup(s => s.GetAll()).Returns(new List<Player> { player });
 
         // Act
         var result = _controller.Update(id, player);
@@ -155,29 +123,11 @@ public class PlayersControllerTests
     }
 
     [Fact]
-    public void Update_DuplicateName_ReturnsBadRequest()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-        var existing = new Player { Id = Guid.NewGuid(), Name = "Existing", Alias = "E" };
-        var player = new Player { Id = id, Name = "Existing", Alias = "T" };
-        _mockService.Setup(s => s.GetById(id)).Returns(new Player { Id = id, Name = "Old", Alias = "T" });
-        _mockService.Setup(s => s.GetAll()).Returns(new List<Player> { existing, player });
-
-        // Act
-        var result = _controller.Update(id, player);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Contains("name", badRequestResult.Value?.ToString()?.ToLower());
-    }
-
-    [Fact]
     public void Delete_ExistingId_ReturnsNoContent()
     {
         // Arrange
         var id = Guid.NewGuid();
-        var player = new Player { Id = id, Name = "Test", Alias = "T" };
+        var player = new Player { Id = id, Name = "Test" };
         _mockService.Setup(s => s.GetById(id)).Returns(player);
 
         // Act

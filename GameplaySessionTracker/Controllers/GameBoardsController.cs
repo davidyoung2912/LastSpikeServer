@@ -2,6 +2,8 @@ using GameplaySessionTracker.Models;
 using GameplaySessionTracker.Services;
 using Microsoft.AspNetCore.Mvc;
 using GameplaySessionTracker.GameRules;
+using System.Security.Cryptography;
+using Microsoft.VisualBasic;
 
 namespace GameplaySessionTracker.Controllers
 {
@@ -12,6 +14,7 @@ namespace GameplaySessionTracker.Controllers
             ISessionService sessionService)
         : ControllerBase
     {
+        private MD5 md5 = MD5.Create();
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GameBoard>>> GetAll()
         {
@@ -32,7 +35,7 @@ namespace GameplaySessionTracker.Controllers
         [HttpGet("hashedPlayerId")]
         public async Task<ActionResult<string>> GetHashedPlayerId(Guid playerId)
         {
-            return Ok(playerId.GetHashCode().ToString());
+            return Ok(ObfuscatePlayerId(playerId));
         }
 
         [HttpGet("{id}/gamestate")]
@@ -50,9 +53,9 @@ namespace GameplaySessionTracker.Controllers
                 // obfuscate player ids
                 Players = new OrderedDictionary<Guid, PlayerState>(state.Players.Select(
                     p => new KeyValuePair<Guid, PlayerState>(
-                        new Guid(p.Key.GetHashCode().ToString()),
+                        ObfuscatePlayerId(p.Key),
                         p.Value))),
-                CurrentPlayerId = new Guid(state.CurrentPlayerId.GetHashCode().ToString())
+                CurrentPlayerId = ObfuscatePlayerId(state.CurrentPlayerId)
             };
 
             return Ok(state);
@@ -143,6 +146,11 @@ namespace GameplaySessionTracker.Controllers
             }
             await gameBoardService.PlayerAction(id, action);
             return NoContent();
+        }
+        private Guid ObfuscatePlayerId(Guid playerId)
+        {
+            var hash = md5.ComputeHash(playerId.ToByteArray());
+            return new Guid(hash);
         }
     }
 }
